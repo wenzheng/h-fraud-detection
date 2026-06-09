@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+spring:
+  application:
+    name: fraud-detection
+
 management:
   endpoints:
     web:
@@ -26,3 +30,7 @@ alert:
     chat-id: ""
     base-url: https://api.telegram.org
     disable-notification: false
+
+logging:
+  json:
+    enabled: true

@@ -9,6 +9,7 @@ This repository contains a Java Spring Boot implementation of a real-time fraud 
 - Rule-based detection for high amount, suspicious accounts, and velocity bursts.
 - Alert generation with severity classification.
 - Optional Telegram bot notifications for flagged alerts.
+- JSON console logging for Kubernetes and Alibaba Cloud Simple Log Service ingestion.
 - Kubernetes deployment manifests with probes and autoscaling.
 - Unit and integration tests with JaCoCo coverage report generation.
 
@@ -116,6 +117,115 @@ alert:
 
 When enabled, each fraud alert is stored and logged as before, then also sent through the Telegram Bot API.
 
+## Alibaba Cloud Log Service
+
+This project is set up to work well with Alibaba Cloud Simple Log Service by writing structured JSON logs to container `stdout`.
+
+### Logging approach
+
+- The application uses [logback-spring.xml](/Users/vincent/git-workspace/test-app/src/main/resources/logback-spring.xml) to emit JSON logs by default.
+- Logs go to console instead of local files, which is the recommended pattern for Kubernetes collection.
+- You can disable JSON locally by setting `LOGGING_JSON_ENABLED=false`.
+
+Example local run with plain-text logs:
+
+```bash
+LOGGING_JSON_ENABLED=false mvn spring-boot:run
+```
+
+### ACK integration
+
+For Alibaba Cloud ACK, the common pattern is:
+
+1. Deploy the app to ACK.
+2. Enable Simple Log Service collection for pod `stdout` and `stderr`.
+3. Send logs into an SLS `Project` and `Logstore`.
+4. Query the structured JSON fields in SLS.
+
+The deployment manifest already includes basic SLS-friendly annotations and emits logs to stdout:
+
+- [deployment.yaml](/Users/vincent/git-workspace/test-app/k8s/deployment.yaml)
+- [sls-pipeline-config.yaml](/Users/vincent/git-workspace/test-app/k8s/sls-pipeline-config.yaml)
+
+If your ACK cluster uses CRD- or console-based log collection, point collection at this workload’s container stdout. Also enable multiline handling for Java stack traces.
+
+### Example AliyunPipelineConfig
+
+This repo includes a CRD example for SLS collection:
+
+```bash
+kubectl apply -f k8s/sls-pipeline-config.yaml
+```
+
+Before applying it, update these values in [sls-pipeline-config.yaml](/Users/vincent/git-workspace/test-app/k8s/sls-pipeline-config.yaml):
+
+- `spec.project.name`
+- `spec.project.endpoint`
+- `spec.logstores[0].name`
+- `K8sNamespaceRegex` if your app is not deployed to `default`
+
+This example:
+
+- collects `stdout` and `stderr` with `input_container_stdio`
+- filters pods by label `app=fraud-detection`
+- parses JSON from the `content` field
+- flushes logs into the target SLS Logstore
+
+### Verify the CRD
+
+After applying:
+
+```bash
+kubectl get clusteraliyunpipelineconfigs
+kubectl get clusteraliyunpipelineconfigs fraud-detection-stdout -o yaml
+```
+
+Look for a successful status on the resource before validating logs in SLS.
+
+### Example log fields
+
+Each log line includes fields such as:
+
+- `@timestamp`
+- `app`
+- `level`
+- `logger`
+- `thread`
+- `message`
+- `trace`
+- `span`
+
+### Recommended SLS setup
+
+- Create an SLS `Project`
+- Create a `Logstore` such as `fraud-detection-prod`
+- Configure ACK log collection for this deployment
+- Use JSON extraction in SLS so fields are queryable
+- Enable multiline merge for stack traces
+
+### Suggested SLS queries
+
+```text
+app: fraud-detection
+```
+
+```text
+app: fraud-detection and level: ERROR
+```
+
+```text
+app: fraud-detection and message: fraud-alert
+```
+
+```text
+logger: com.vincent.fraud.service.AlertService
+```
+
+### Useful references
+
+- [Alibaba Cloud Simple Log Service: Kubernetes container log collection](https://www.alibabacloud.com/help/doc-detail/2878919.html)
+- [Alibaba Cloud ACK: collect application logs with Log Service](https://www.alibabacloud.com/help/en/ack/serverless-kubernetes/user-guide/use-log-service-to-collect-application-logs)
+
 ## Test
 
 ```bash
@@ -133,6 +243,7 @@ Manifests are available in `k8s/`:
 - `service.yaml`
 - `hpa.yaml`
 - `configmap.yaml`
+- `sls-pipeline-config.yaml`
 
 Apply them with:
 

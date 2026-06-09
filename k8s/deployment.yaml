@@ -13,6 +13,9 @@ spec:
     metadata:
       labels:
         app: fraud-detection
+      annotations:
+        sls.alibaba.com/log-enable: "true"
+        sls.alibaba.com/log-stdout: "true"
     spec:
       containers:
         - name: fraud-detection
@@ -22,6 +25,8 @@ spec:
           env:
             - name: SPRING_CONFIG_ADDITIONAL_LOCATION
               value: file:/config/
+            - name: LOGGING_JSON_ENABLED
+              value: "true"
           volumeMounts:
             - name: config
               mountPath: /config/application.yml
