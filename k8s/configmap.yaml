@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fraud-detection-app-config
+data:
+  application.yml: |
+    server:
+      port: 8080
+    fraud:
+      amount-threshold: 10000
+      velocity-count-threshold: 3
+      velocity-window: PT2M
+      suspicious-accounts:
+        - acct-blacklist-001
+        - acct-blacklist-002

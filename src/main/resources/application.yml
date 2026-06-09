@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+fraud:
+  amount-threshold: 10000
+  velocity-count-threshold: 3
+  velocity-window: PT2M
+  suspicious-accounts:
+    - acct-blacklist-001
+    - acct-blacklist-002
