@@ -1,16 +1,33 @@
 # Fraud Platform on Alibaba Cloud SMQ
 
-This repository is now split into two independently deployable applications plus one shared module:
+This repository is split into three independently scalable Spring Boot applications plus one shared module:
 
-- `transaction-api`: receives transactions over HTTP and publishes them to Alibaba Cloud Simple Message Queue (MNS/SMQ)
-- `fraud-processor`: consumes messages from the queue, evaluates fraud rules, and raises alerts
-- `shared`: common DTOs shared by both applications
+- `transaction-api`: receives transactions over HTTP and publishes them to an Alibaba Cloud MNS transaction queue
+- `fraud-processor`: consumes transaction messages, applies fraud rules, and publishes alert events to a separate Alibaba Cloud MNS alert queue
+- `alert-handler`: consumes alert events and routes them by severity using preconfigured actions
+- `shared`: common DTOs used by all applications
 
-## Why this split scales
+## Architecture
 
-- `transaction-api` is stateless. You can run multiple replicas behind a Kubernetes `Service`.
-- `fraud-processor` is also stateless with respect to queue consumption. Multiple replicas act as competing consumers on the same Alibaba Cloud queue.
-- Queue-based decoupling absorbs traffic spikes and lets ingestion scale independently from fraud processing.
+```mermaid
+flowchart LR
+    Client["Payment Client"] --> API["transaction-api"]
+    API --> TQ["MNS Transaction Queue"]
+    TQ --> Processor["fraud-processor"]
+    Processor --> Rules["Rule-Based Detection"]
+    Rules --> AQ["MNS Alert Queue"]
+    AQ --> AlertHandler["alert-handler"]
+    AlertHandler --> High["HIGH: Telegram + Log"]
+    AlertHandler --> Medium["MEDIUM: Email + Log"]
+    AlertHandler --> Low["LOW: Log Only"]
+```
+
+## Why this scales horizontally
+
+- `transaction-api` is stateless and can run behind a Kubernetes `Service` with multiple replicas.
+- `fraud-processor` uses competing consumers on the transaction queue, so more replicas increase processing throughput safely.
+- `alert-handler` uses competing consumers on the alert queue, so alert delivery can scale independently of detection.
+- Separate queues decouple ingestion, detection, and notification workloads.
 
 ## Module layout
 
@@ -18,18 +35,8 @@ This repository is now split into two independently deployable applications plus
 shared/
 transaction-api/
 fraud-processor/
+alert-handler/
 k8s/
-```
-
-## Architecture
-
-```mermaid
-flowchart LR
-    Client["Payment Client"] --> API["transaction-api"]
-    API --> Queue["Alibaba Cloud SMQ / MNS Queue"]
-    Queue --> Processor["fraud-processor"]
-    Processor --> Rules["Rule-based Fraud Detection"]
-    Rules --> Alerts["Alert Logging / Telegram"]
 ```
 
 ## Build
@@ -40,50 +47,49 @@ Build everything:
 mvn -DskipTests package
 ```
 
-Build one service:
+Build a single service:
 
 ```bash
 mvn -pl transaction-api -am -DskipTests package
 mvn -pl fraud-processor -am -DskipTests package
+mvn -pl alert-handler -am -DskipTests package
 ```
 
-By default, `package` now builds the jar and then builds the Docker image for each application.
-To skip Docker image creation, add:
+The `package` phase builds the jar on the host first, then builds each Docker image from the module Dockerfile. To skip Docker image creation:
 
 ```bash
--Ddocker.skip=true
+mvn -Ddocker.skip=true verify
 ```
 
 ## Local run
 
-Run the HTTP ingress app:
-
 ```bash
 mvn -pl transaction-api spring-boot:run
-```
-
-Run the fraud processor:
-
-```bash
 mvn -pl fraud-processor spring-boot:run
+mvn -pl alert-handler spring-boot:run
 ```
 
-## Configuration
+## Shared configuration
 
-Both applications use the same Alibaba Cloud queue configuration:
+All services share the same MNS endpoint and credentials. Two queues are used:
 
 ```bash
 export MNS_ENDPOINT=http://<account-id>.mns.<region>.aliyuncs.com/
-export MNS_QUEUE_NAME=fraud-transactions
+export MNS_TRANSACTION_QUEUE_NAME=fraud-transactions
+export MNS_ALERT_QUEUE_NAME=fraud-alerts
 export MNS_ACCESS_KEY_ID=<your-access-key-id>
 export MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
 ```
 
-### transaction-api
+Shared Kubernetes values live in [k8s/shared-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/shared-configmap.yaml).
 
-The producer service listens on `POST /api/v1/transactions` and publishes a JSON transaction event to SMQ.
+## Application behavior
 
-Example request:
+### `transaction-api`
+
+Publishes a transaction event with `POST /api/v1/transactions`.
+
+Example:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/transactions \
@@ -98,189 +104,111 @@ curl -X POST http://localhost:8080/api/v1/transactions \
   }'
 ```
 
-### fraud-processor
+### `fraud-processor`
 
-The consumer app polls the queue continuously and processes messages with configurable competing-consumer concurrency:
+Consumes transaction events and evaluates rule-based fraud checks.
 
 ```bash
 export CONSUMER_POLLER_CONCURRENCY=2
 export CONSUMER_BATCH_SIZE=8
 export CONSUMER_WAIT_SECONDS=15
-```
-
-Fraud rules are deliberately stateless so horizontal scaling remains safe without pod-local shared memory.
-
-Configurable rules:
-
-```bash
 export FRAUD_AMOUNT_THRESHOLD=10000
 ```
 
-Watchlists are in:
+If a transaction is suspicious, `fraud-processor` publishes an `AlertEvent` to the alert queue instead of sending notifications directly.
 
-- [fraud-processor application.yml](/Users/vincent/git-workspace/test-app/fraud-processor/src/main/resources/application.yml)
+Current severity behavior:
 
-### Telegram alerts
+- `HIGH`: multiple fraud reasons, suspicious account, or amount threshold breach
+- `MEDIUM`: suspicious merchant-only alerts
+- `LOW`: any future generic anomaly reason not matched by the higher rules
 
-Telegram notifications are sent only by `fraud-processor`.
+### `alert-handler`
 
-```bash
-export TELEGRAM_ENABLED=true
-export TELEGRAM_BOT_TOKEN=<your-bot-token>
-export TELEGRAM_CHAT_ID=<your-chat-id>
-```
+Consumes alert events from the alert queue and applies routing rules based on severity.
+
+Default actions in [alert-handler application.yml](/Users/vincent/git-workspace/test-app/alert-handler/src/main/resources/application.yml):
+
+- `HIGH`: `TELEGRAM`, `LOG`
+- `MEDIUM`: `EMAIL`, `LOG`
+- `LOW`: `LOG`
+
+The Telegram and email sender implementations are placeholders for later integration and currently log intent only.
 
 ## Docker images
-
-The Maven `package` phase builds Docker images automatically from the module Dockerfiles:
-
-```bash
-mvn -pl transaction-api -am -DskipTests package
-mvn -pl fraud-processor -am -DskipTests package
-```
 
 Default image names:
 
 - `fraud/transaction-api:0.0.1-SNAPSHOT`
 - `fraud/fraud-processor:0.0.1-SNAPSHOT`
+- `fraud/alert-handler:0.0.1-SNAPSHOT`
 
-You can override the image prefix:
+Override the image prefix if needed:
 
 ```bash
-mvn -pl transaction-api -am -DskipTests -Ddocker.image.prefix=registry.cn-hangzhou.aliyuncs.com/your-namespace package
+mvn -pl alert-handler -am -DskipTests -Ddocker.image.prefix=registry.cn-hangzhou.aliyuncs.com/your-namespace package
 ```
+
+## Test coverage
+
+Generate tests plus JaCoCo reports:
+
+```bash
+mvn -Ddocker.skip=true verify
+```
+
+Per-module HTML reports are generated under:
+
+- `transaction-api/target/site/jacoco/index.html`
+- `fraud-processor/target/site/jacoco/index.html`
+- `alert-handler/target/site/jacoco/index.html`
 
 ## GitHub Actions and GHCR
 
-This repo includes a GitHub Actions workflow at:
+The workflow at [.github/workflows/ci-cd.yml](/Users/vincent/git-workspace/test-app/.github/workflows/ci-cd.yml):
 
-- [.github/workflows/ci-cd.yml](/Users/vincent/git-workspace/test-app/.github/workflows/ci-cd.yml)
+- runs tests and JaCoCo coverage for all three applications
+- uploads HTML coverage and Surefire reports as workflow artifacts
+- builds and pushes Docker images to GHCR
+- deploys to Alibaba Cloud ACK from `main`
 
-What it does:
-
-- runs Maven tests automatically
-- generates JaCoCo coverage reports during `verify`
-- uploads HTML coverage reports and test reports as workflow artifacts
-- publishes a coverage summary in the workflow run summary
-- builds Docker images for `transaction-api` and `fraud-processor`
-- pushes them to GitHub Container Registry on `main`, tags, or manual dispatch
-- deploys to Alibaba Cloud ACK on `main`
-- builds and tests on pull requests without pushing or deploying
-
-Published image names:
+Published images:
 
 - `ghcr.io/<owner>/<repo>-transaction-api`
 - `ghcr.io/<owner>/<repo>-fraud-processor`
+- `ghcr.io/<owner>/<repo>-alert-handler`
 
-Example:
-
-- `ghcr.io/acme/fraud-platform-transaction-api`
-- `ghcr.io/acme/fraud-platform-fraud-processor`
-
-Notes:
-
-- the workflow uses `GITHUB_TOKEN` to authenticate to GHCR
-- repository workflow permissions must allow package write access
-- the workflow runs `mvn -Ddocker.skip=true ...` because GitHub Actions handles container publishing
-- the deploy job expects a base64-encoded kubeconfig secret named `ACK_KUBECONFIG_B64`
-- if your cluster needs secrets such as `mns-credentials` or Telegram bot settings, create them in ACK before enabling auto-deploy
-
-To create the kubeconfig secret in GitHub:
-
-```bash
-base64 < ~/.kube/config
-```
-
-Store that output in the repository or environment secret:
-
-- `ACK_KUBECONFIG_B64`
+Secrets such as `ACK_KUBECONFIG_B64`, `MNS_ACCESS_KEY_ID`, and `MNS_ACCESS_KEY_SECRET` should stay in GitHub Secrets or ACK Secrets, not in source code.
 
 ## Kubernetes on ACK
 
-The `k8s/` directory contains separate manifests for both services:
-
-- `namespace.yaml`
-- `shared-configmap.yaml`
-- `transaction-api-configmap.yaml`
-- `transaction-api-deployment.yaml`
-- `transaction-api-service.yaml`
-- `transaction-api-hpa.yaml`
-- `fraud-processor-configmap.yaml`
-- `fraud-processor-deployment.yaml`
-- `fraud-processor-hpa.yaml`
-
-### Deploy
+Apply the manifests:
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/shared-configmap.yaml
 kubectl apply -f k8s/transaction-api-configmap.yaml
 kubectl apply -f k8s/fraud-processor-configmap.yaml
+kubectl apply -f k8s/alert-handler-configmap.yaml
 kubectl apply -f k8s/transaction-api-deployment.yaml
 kubectl apply -f k8s/transaction-api-service.yaml
 kubectl apply -f k8s/transaction-api-hpa.yaml
 kubectl apply -f k8s/fraud-processor-deployment.yaml
 kubectl apply -f k8s/fraud-processor-hpa.yaml
+kubectl apply -f k8s/alert-handler-deployment.yaml
+kubectl apply -f k8s/alert-handler-hpa.yaml
 ```
 
-Before deploying, update the image names in:
+Before deploying, update image names in:
 
 - [transaction-api deployment](/Users/vincent/git-workspace/test-app/k8s/transaction-api-deployment.yaml)
 - [fraud-processor deployment](/Users/vincent/git-workspace/test-app/k8s/fraud-processor-deployment.yaml)
+- [alert-handler deployment](/Users/vincent/git-workspace/test-app/k8s/alert-handler-deployment.yaml)
 
-Create the queue credentials secret:
+Create the MNS credentials secret:
 
 ```bash
 kubectl -n fraud-platform create secret generic mns-credentials \
   --from-literal=MNS_ACCESS_KEY_ID=<your-access-key-id> \
   --from-literal=MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
 ```
-
-Shared values such as `MNS_ENDPOINT`, `MNS_QUEUE_NAME`, and `LOGGING_JSON_ENABLED` now live in:
-
-- [shared-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/shared-configmap.yaml)
-
-App-specific knobs stay in:
-
-- [transaction-api-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/transaction-api-configmap.yaml)
-- [fraud-processor-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/fraud-processor-configmap.yaml)
-
-### Verify
-
-```bash
-kubectl get pods -n fraud-platform
-kubectl get svc -n fraud-platform
-kubectl get hpa -n fraud-platform
-kubectl logs -n fraud-platform deploy/transaction-api
-kubectl logs -n fraud-platform deploy/fraud-processor
-```
-
-## Horizontal scaling notes
-
-- `transaction-api` scales behind `transaction-api-service`
-- `fraud-processor` scales as multiple queue consumers
-- failed messages are not deleted from SMQ, so they can be retried after the queue visibility timeout
-- because the rules are stateless, processing stays replica-safe
-
-If you later need stateful rules such as transaction velocity across replicas, introduce a shared external state store such as Redis, Tair, or a database rather than pod-local memory.
-
-## Testing
-
-Run all module tests:
-
-```bash
-mvn test
-```
-
-Run one module:
-
-```bash
-mvn -pl transaction-api test
-mvn -pl fraud-processor test
-```
-
-## Alibaba Cloud references
-
-- [Java SDK for Alibaba Cloud MNS](https://www.alibabacloud.com/help/en/mns/developer-reference/java-sdk-send-message)
-- [Receive messages with the Java SDK](https://www.alibabacloud.com/help/en/mns/developer-reference/java-sdk-receive-message)
-- [ACK deployment with kubectl](https://www.alibabacloud.com/help/en/ack/ack-managed-and-ack-dedicated/getting-started/use-the-nginx-image-supported-by-ack-to-deploy-stateless-applications)

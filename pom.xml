@@ -21,6 +21,7 @@
         <module>shared</module>
         <module>transaction-api</module>
         <module>fraud-processor</module>
+        <module>alert-handler</module>
     </modules>
 
     <properties>

@@ -23,6 +23,6 @@ public class TransactionApiConfig {
 
     @Bean
     CloudQueue transactionQueue(MNSClient mnsClient, MnsProperties properties) {
-        return mnsClient.getQueueRef(properties.queueName());
+        return mnsClient.getQueueRef(properties.transactionQueueName());
     }
 }

@@ -40,6 +40,7 @@ jobs:
           path: |
             transaction-api/target/site/jacoco/**
             fraud-processor/target/site/jacoco/**
+            alert-handler/target/site/jacoco/**
 
       - name: Publish Surefire reports
         if: always()
@@ -49,6 +50,7 @@ jobs:
           path: |
             transaction-api/target/surefire-reports/**
             fraud-processor/target/surefire-reports/**
+            alert-handler/target/surefire-reports/**
 
       - name: Add coverage summary
         shell: bash
@@ -58,7 +60,7 @@ jobs:
           from pathlib import Path
 
           rows = []
-          for module in ["transaction-api", "fraud-processor"]:
+          for module in ["transaction-api", "fraud-processor", "alert-handler"]:
               csv_path = Path(module) / "target" / "site" / "jacoco" / "jacoco.csv"
               if not csv_path.exists():
                   continue
@@ -98,6 +100,7 @@ jobs:
         service:
           - transaction-api
           - fraud-processor
+          - alert-handler
 
     steps:
       - name: Check out repository
@@ -189,6 +192,7 @@ jobs:
           TAG="latest"
           echo "transaction_api=${REGISTRY}/${OWNER_LC}/${REPO_LC}-transaction-api:${TAG}" >> "${GITHUB_OUTPUT}"
           echo "fraud_processor=${REGISTRY}/${OWNER_LC}/${REPO_LC}-fraud-processor:${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "alert_handler=${REGISTRY}/${OWNER_LC}/${REPO_LC}-alert-handler:${TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Apply base manifests
         run: |
@@ -196,18 +200,23 @@ jobs:
           kubectl apply -f k8s/shared-configmap.yaml
           kubectl apply -f k8s/transaction-api-configmap.yaml
           kubectl apply -f k8s/fraud-processor-configmap.yaml
+          kubectl apply -f k8s/alert-handler-configmap.yaml
           kubectl apply -f k8s/transaction-api-deployment.yaml
           kubectl apply -f k8s/transaction-api-service.yaml
           kubectl apply -f k8s/transaction-api-hpa.yaml
           kubectl apply -f k8s/fraud-processor-deployment.yaml
           kubectl apply -f k8s/fraud-processor-hpa.yaml
+          kubectl apply -f k8s/alert-handler-deployment.yaml
+          kubectl apply -f k8s/alert-handler-hpa.yaml
 
       - name: Update deployment images
         run: |
           kubectl -n fraud-platform set image deployment/transaction-api transaction-api=${{ steps.images.outputs.transaction_api }}
           kubectl -n fraud-platform set image deployment/fraud-processor fraud-processor=${{ steps.images.outputs.fraud_processor }}
+          kubectl -n fraud-platform set image deployment/alert-handler alert-handler=${{ steps.images.outputs.alert_handler }}
 
       - name: Wait for rollout
         run: |
           kubectl -n fraud-platform rollout status deployment/transaction-api --timeout=5m
           kubectl -n fraud-platform rollout status deployment/fraud-processor --timeout=5m
+          kubectl -n fraud-platform rollout status deployment/alert-handler --timeout=5m

@@ -1,4 +1,4 @@
-package com.vincent.fraud.processor.config;
+package com.vincent.fraud.alert.config;
 
 import com.aliyun.mns.client.CloudAccount;
 import com.aliyun.mns.client.CloudQueue;
@@ -12,10 +12,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
         MnsProperties.class,
-        FraudRulesProperties.class,
-        ConsumerProperties.class
+        ConsumerProperties.class,
+        AlertRoutingProperties.class
 })
-public class FraudProcessorConfig {
+public class AlertHandlerConfig {
 
     @Bean(destroyMethod = "close")
     MNSClient mnsClient(MnsProperties properties) {
@@ -25,11 +25,6 @@ public class FraudProcessorConfig {
                 properties.accessKeySecret()
         );
         return account.getMNSClient();
-    }
-
-    @Bean
-    CloudQueue transactionQueue(MNSClient mnsClient, MnsProperties properties) {
-        return mnsClient.getQueueRef(properties.transactionQueueName());
     }
 
     @Bean

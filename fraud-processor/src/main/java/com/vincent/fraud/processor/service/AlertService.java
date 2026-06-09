@@ -14,24 +14,34 @@ public class AlertService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertService.class);
 
-    private final List<AlertNotifier> alertNotifiers;
+    private final AlertPublisher alertPublisher;
+    private final AlertSeverityResolver alertSeverityResolver;
 
-    public AlertService(List<AlertNotifier> alertNotifiers) {
-        this.alertNotifiers = alertNotifiers;
+    public AlertService(AlertPublisher alertPublisher, AlertSeverityResolver alertSeverityResolver) {
+        this.alertPublisher = alertPublisher;
+        this.alertSeverityResolver = alertSeverityResolver;
     }
 
     public void raise(TransactionEvent transactionEvent, List<String> reasons) {
-        AlertEvent.Severity severity = reasons.size() > 1 ? AlertEvent.Severity.HIGH : AlertEvent.Severity.MEDIUM;
+        AlertEvent.Severity severity = alertSeverityResolver.resolve(reasons);
         AlertEvent alertEvent = new AlertEvent(
                 UUID.randomUUID().toString(),
                 transactionEvent.transactionId(),
                 transactionEvent.accountId(),
+                transactionEvent.merchantId(),
+                transactionEvent.deviceId(),
+                transactionEvent.ipAddress(),
+                transactionEvent.amount(),
+                transactionEvent.currency(),
                 reasons,
                 severity,
+                transactionEvent.occurredAt(),
                 Instant.now()
         );
+        String messageId = alertPublisher.publish(alertEvent);
         log.warn("fraud-alert transactionId={} accountId={} severity={} reasons={}",
                 transactionEvent.transactionId(), transactionEvent.accountId(), severity, reasons);
-        alertNotifiers.forEach(notifier -> notifier.notify(alertEvent, transactionEvent));
+        log.info("fraud-alert-enqueued alertId={} transactionId={} queueMessageId={}",
+                alertEvent.alertId(), transactionEvent.transactionId(), messageId);
     }
 }

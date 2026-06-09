@@ -5,5 +5,6 @@ metadata:
   namespace: fraud-platform
 data:
   MNS_ENDPOINT: http://your-account-id.mns.cn-hangzhou.aliyuncs.com/
-  MNS_QUEUE_NAME: fraud-transactions
+  MNS_TRANSACTION_QUEUE_NAME: fraud-transactions
+  MNS_ALERT_QUEUE_NAME: fraud-alerts
   LOGGING_JSON_ENABLED: "true"

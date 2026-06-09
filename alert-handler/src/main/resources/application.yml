@@ -1,6 +1,6 @@
 spring:
   application:
-    name: fraud-processor
+    name: alert-handler
 
 server:
   port: 8080
@@ -24,18 +24,19 @@ logging:
 app:
   mns:
     endpoint: ${MNS_ENDPOINT:http://your-account-id.mns.cn-hangzhou.aliyuncs.com/}
-    transaction-queue-name: ${MNS_TRANSACTION_QUEUE_NAME:fraud-transactions}
     alert-queue-name: ${MNS_ALERT_QUEUE_NAME:fraud-alerts}
     access-key-id: ${MNS_ACCESS_KEY_ID:replace-me}
     access-key-secret: ${MNS_ACCESS_KEY_SECRET:replace-me}
   consumer:
-    poller-concurrency: ${CONSUMER_POLLER_CONCURRENCY:2}
-    batch-size: ${CONSUMER_BATCH_SIZE:8}
-    wait-seconds: ${CONSUMER_WAIT_SECONDS:15}
-  fraud:
-    amount-threshold: ${FRAUD_AMOUNT_THRESHOLD:10000}
-    suspicious-accounts:
-      - acct-blacklist-001
-      - acct-blacklist-002
-    suspicious-merchants:
-      - merchant-high-risk-001
+    poller-concurrency: ${ALERT_CONSUMER_POLLER_CONCURRENCY:2}
+    batch-size: ${ALERT_CONSUMER_BATCH_SIZE:8}
+    wait-seconds: ${ALERT_CONSUMER_WAIT_SECONDS:15}
+  alert-routing:
+    high-actions:
+      - TELEGRAM
+      - LOG
+    medium-actions:
+      - EMAIL
+      - LOG
+    low-actions:
+      - LOG

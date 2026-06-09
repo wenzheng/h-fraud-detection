@@ -1,44 +1,43 @@
-package com.vincent.fraud.processor.service;
+package com.vincent.fraud.alert.service;
 
 import com.aliyun.mns.client.CloudQueue;
 import com.aliyun.mns.common.ClientException;
 import com.aliyun.mns.model.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vincent.fraud.processor.config.ConsumerProperties;
-import com.vincent.fraud.shared.model.TransactionEvent;
+import com.vincent.fraud.alert.config.ConsumerProperties;
+import com.vincent.fraud.shared.model.AlertEvent;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MnsConsumerLifecycle implements SmartLifecycle {
+public class MnsAlertConsumerLifecycle implements SmartLifecycle {
 
-    private static final Logger log = LoggerFactory.getLogger(MnsConsumerLifecycle.class);
+    private static final Logger log = LoggerFactory.getLogger(MnsAlertConsumerLifecycle.class);
 
-    private final CloudQueue transactionQueue;
+    private final CloudQueue alertQueue;
     private final ConsumerProperties properties;
     private final ExecutorService consumerExecutorService;
     private final ObjectMapper objectMapper;
-    private final FraudProcessingService fraudProcessingService;
+    private final AlertRoutingService alertRoutingService;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public MnsConsumerLifecycle(
-            @Qualifier("transactionQueue") CloudQueue transactionQueue,
+    public MnsAlertConsumerLifecycle(
+            CloudQueue alertQueue,
             ConsumerProperties properties,
             ExecutorService consumerExecutorService,
             ObjectMapper objectMapper,
-            FraudProcessingService fraudProcessingService
+            AlertRoutingService alertRoutingService
     ) {
-        this.transactionQueue = transactionQueue;
+        this.alertQueue = alertQueue;
         this.properties = properties;
         this.consumerExecutorService = consumerExecutorService;
         this.objectMapper = objectMapper;
-        this.fraudProcessingService = fraudProcessingService;
+        this.alertRoutingService = alertRoutingService;
     }
 
     @Override
@@ -53,7 +52,7 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
     private void pollLoop() {
         while (running.get()) {
             try {
-                List<Message> messages = transactionQueue.batchPopMessage(
+                List<Message> messages = alertQueue.batchPopMessage(
                         properties.batchSize(),
                         properties.waitSeconds()
                 );
@@ -64,20 +63,20 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
                     processMessage(message);
                 }
             } catch (ClientException exception) {
-                log.error("Failed to poll messages from Alibaba Cloud SMQ", exception);
+                log.error("Failed to poll alert messages from Alibaba Cloud SMQ", exception);
             } catch (Exception exception) {
-                log.error("Unexpected error in MNS consumer loop", exception);
+                log.error("Unexpected error in alert consumer loop", exception);
             }
         }
     }
 
     private void processMessage(Message message) {
         try {
-            TransactionEvent event = objectMapper.readValue(message.getMessageBodyAsRawString(), TransactionEvent.class);
-            fraudProcessingService.process(event);
-            transactionQueue.deleteMessage(message.getReceiptHandle());
+            AlertEvent event = objectMapper.readValue(message.getMessageBodyAsRawString(), AlertEvent.class);
+            alertRoutingService.route(event);
+            alertQueue.deleteMessage(message.getReceiptHandle());
         } catch (Exception exception) {
-            log.error("Failed to process messageId={} receiptHandle={}",
+            log.error("Failed to process alert messageId={} receiptHandle={}",
                     message.getMessageId(), message.getReceiptHandle(), exception);
         }
     }
@@ -90,10 +89,5 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
     @Override
     public boolean isRunning() {
         return running.get();
-    }
-
-    @Override
-    public int getPhase() {
-        return 0;
     }
 }

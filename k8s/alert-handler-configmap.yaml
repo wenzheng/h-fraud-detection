@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alert-handler-config
+  namespace: fraud-platform
+data:
+  SPRING_APPLICATION_NAME: alert-handler
+  ALERT_CONSUMER_POLLER_CONCURRENCY: "2"
+  ALERT_CONSUMER_BATCH_SIZE: "8"
+  ALERT_CONSUMER_WAIT_SECONDS: "15"
