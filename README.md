@@ -150,6 +150,51 @@ You can override the image prefix:
 mvn -pl transaction-api -am -DskipTests -Ddocker.image.prefix=registry.cn-hangzhou.aliyuncs.com/your-namespace package
 ```
 
+## GitHub Actions and GHCR
+
+This repo includes a GitHub Actions workflow at:
+
+- [.github/workflows/ci-cd.yml](/Users/vincent/git-workspace/test-app/.github/workflows/ci-cd.yml)
+
+What it does:
+
+- runs Maven tests automatically
+- generates JaCoCo coverage reports during `verify`
+- uploads HTML coverage reports and test reports as workflow artifacts
+- publishes a coverage summary in the workflow run summary
+- builds Docker images for `transaction-api` and `fraud-processor`
+- pushes them to GitHub Container Registry on `main`, tags, or manual dispatch
+- deploys to Alibaba Cloud ACK on `main`
+- builds and tests on pull requests without pushing or deploying
+
+Published image names:
+
+- `ghcr.io/<owner>/<repo>-transaction-api`
+- `ghcr.io/<owner>/<repo>-fraud-processor`
+
+Example:
+
+- `ghcr.io/acme/fraud-platform-transaction-api`
+- `ghcr.io/acme/fraud-platform-fraud-processor`
+
+Notes:
+
+- the workflow uses `GITHUB_TOKEN` to authenticate to GHCR
+- repository workflow permissions must allow package write access
+- the workflow runs `mvn -Ddocker.skip=true ...` because GitHub Actions handles container publishing
+- the deploy job expects a base64-encoded kubeconfig secret named `ACK_KUBECONFIG_B64`
+- if your cluster needs secrets such as `mns-credentials` or Telegram bot settings, create them in ACK before enabling auto-deploy
+
+To create the kubeconfig secret in GitHub:
+
+```bash
+base64 < ~/.kube/config
+```
+
+Store that output in the repository or environment secret:
+
+- `ACK_KUBECONFIG_B64`
+
 ## Kubernetes on ACK
 
 The `k8s/` directory contains separate manifests for both services:
