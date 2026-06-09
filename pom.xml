@@ -10,67 +10,38 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.example</groupId>
-    <artifactId>fraud-detection</artifactId>
+    <groupId>com.vincent.fraud</groupId>
+    <artifactId>fraud-platform</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>fraud-detection</name>
-    <description>Real-time fraud detection system</description>
+    <packaging>pom</packaging>
+    <name>fraud-platform</name>
+    <description>Split fraud platform with HTTP ingress and Alibaba Cloud SMQ consumer</description>
+
+    <modules>
+        <module>shared</module>
+        <module>transaction-api</module>
+        <module>fraud-processor</module>
+    </modules>
 
     <properties>
         <java.version>17</java.version>
         <maven.compiler.release>17</maven.compiler.release>
+        <logstash.logback.encoder.version>8.0</logstash.logback.encoder.version>
+        <aliyun.mns.sdk.version>1.1.10</aliyun.mns.sdk.version>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-            <version>8.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash.logback.encoder.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.mns</groupId>
+                <artifactId>aliyun-sdk-mns</artifactId>
+                <version>${aliyun.mns.sdk.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: transaction-api
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+  json:
+    enabled: true
+
+app:
+  mns:
+    endpoint: ${MNS_ENDPOINT:http://your-account-id.mns.cn-hangzhou.aliyuncs.com/}
+    queue-name: ${MNS_QUEUE_NAME:fraud-transactions}
+    access-key-id: ${MNS_ACCESS_KEY_ID:replace-me}
+    access-key-secret: ${MNS_ACCESS_KEY_SECRET:replace-me}

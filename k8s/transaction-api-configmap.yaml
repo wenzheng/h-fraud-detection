@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transaction-api-config
+  namespace: fraud-platform
+data:
+  MNS_ENDPOINT: http://your-account-id.mns.cn-hangzhou.aliyuncs.com/
+  MNS_QUEUE_NAME: fraud-transactions
+  LOGGING_JSON_ENABLED: "true"

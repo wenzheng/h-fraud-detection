@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: fraud-processor
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+  json:
+    enabled: true
+
+app:
+  mns:
+    endpoint: ${MNS_ENDPOINT:http://your-account-id.mns.cn-hangzhou.aliyuncs.com/}
+    queue-name: ${MNS_QUEUE_NAME:fraud-transactions}
+    access-key-id: ${MNS_ACCESS_KEY_ID:replace-me}
+    access-key-secret: ${MNS_ACCESS_KEY_SECRET:replace-me}
+  consumer:
+    poller-concurrency: ${CONSUMER_POLLER_CONCURRENCY:2}
+    batch-size: ${CONSUMER_BATCH_SIZE:8}
+    wait-seconds: ${CONSUMER_WAIT_SECONDS:15}
+  fraud:
+    amount-threshold: ${FRAUD_AMOUNT_THRESHOLD:10000}
+    suspicious-accounts:
+      - acct-blacklist-001
+      - acct-blacklist-002
+    suspicious-merchants:
+      - merchant-high-risk-001
+  telegram:
+    enabled: ${TELEGRAM_ENABLED:false}
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    chat-id: ${TELEGRAM_CHAT_ID:}
+    base-url: ${TELEGRAM_BASE_URL:https://api.telegram.org}
+    disable-notification: ${TELEGRAM_DISABLE_NOTIFICATION:false}

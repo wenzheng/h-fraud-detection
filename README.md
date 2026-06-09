@@ -1,74 +1,82 @@
-# Real-Time Fraud Detection System
+# Fraud Platform on Alibaba Cloud SMQ
 
-This repository contains a Java Spring Boot implementation of a real-time fraud detection service designed for Kubernetes deployment. It ingests transaction events, evaluates them with rule-based fraud detection, raises alerts for suspicious activity, and exposes health endpoints suitable for cloud-native operations.
+This repository is now split into two independently deployable applications plus one shared module:
 
-## Features
+- `transaction-api`: receives transactions over HTTP and publishes them to Alibaba Cloud Simple Message Queue (MNS/SMQ)
+- `fraud-processor`: consumes messages from the queue, evaluates fraud rules, and raises alerts
+- `shared`: common DTOs shared by both applications
 
-- Real-time transaction ingestion through a REST API.
-- Asynchronous queue-backed fraud analysis pipeline.
-- Rule-based detection for high amount, suspicious accounts, and velocity bursts.
-- Alert generation with severity classification.
-- Optional Telegram bot notifications for flagged alerts.
-- JSON console logging for Kubernetes and Alibaba Cloud Simple Log Service ingestion.
-- Kubernetes deployment manifests with probes and autoscaling.
-- Unit and integration tests with JaCoCo coverage report generation.
+## Why this split scales
+
+- `transaction-api` is stateless. You can run multiple replicas behind a Kubernetes `Service`.
+- `fraud-processor` is also stateless with respect to queue consumption. Multiple replicas act as competing consumers on the same Alibaba Cloud queue.
+- Queue-based decoupling absorbs traffic spikes and lets ingestion scale independently from fraud processing.
+
+## Module layout
+
+```text
+shared/
+transaction-api/
+fraud-processor/
+k8s/
+```
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Client["Payment Client / Upstream Service"] --> API["Transaction API"]
-    API --> Repo["Transaction Repository"]
-    API --> Queue["Transaction Queue"]
-    Queue --> Worker["Fraud Analysis Worker"]
-    Worker --> Rules["Fraud Rules Engine"]
-    Rules --> Alert["Alert Service"]
-    Worker --> Repo
-    Alert --> AlertStore["Alert Repository"]
-    API --> Query["Query Endpoints"]
-    Query --> Repo
-    Query --> AlertStore
+    Client["Payment Client"] --> API["transaction-api"]
+    API --> Queue["Alibaba Cloud SMQ / MNS Queue"]
+    Queue --> Processor["fraud-processor"]
+    Processor --> Rules["Rule-based Fraud Detection"]
+    Rules --> Alerts["Alert Logging / Telegram"]
 ```
 
-## Sequence
+## Build
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant A as API
-    participant Q as Queue
-    participant W as Worker
-    participant R as Rules Engine
-    participant L as Alert Service
+Build everything:
 
-    C->>A: POST /api/v1/transactions
-    A->>A: Persist RECEIVED transaction
-    A->>Q: Publish transaction
-    A-->>C: 202 Accepted
-    Q->>W: Deliver message
-    W->>R: Evaluate rules
-    alt Fraud detected
-        R-->>W: Reasons
-        W->>L: Raise alert
-        W->>A: Update status to FLAGGED
-    else Legitimate
-        R-->>W: Clear
-        W->>A: Update status to APPROVED
-    end
+```bash
+mvn -DskipTests package
 ```
 
-## Design Choices
+Build one service:
 
-- `Spring Boot` keeps the service easy to run locally and easy to extend with production adapters.
-- `TransactionQueue` is an interface so the current in-memory queue can be replaced with AWS SQS, Google Pub/Sub, or Alibaba Message Service without changing business logic.
-- `FraudRule` isolates each detection rule, making the rules engine easy to test and evolve.
-- `Actuator` exposes liveness and readiness probes for Kubernetes.
-- `In-memory repositories` keep this sample self-contained. In production, replace them with PostgreSQL, Redis, or a streaming store.
-- `AlertNotifier` keeps outbound notifications modular, so Telegram can be swapped or supplemented with other channels later.
+```bash
+mvn -pl transaction-api -am -DskipTests package
+mvn -pl fraud-processor -am -DskipTests package
+```
 
-## API
+## Local run
 
-### Submit transaction
+Run the HTTP ingress app:
+
+```bash
+mvn -pl transaction-api spring-boot:run
+```
+
+Run the fraud processor:
+
+```bash
+mvn -pl fraud-processor spring-boot:run
+```
+
+## Configuration
+
+Both applications use the same Alibaba Cloud queue configuration:
+
+```bash
+export MNS_ENDPOINT=http://<account-id>.mns.<region>.aliyuncs.com/
+export MNS_QUEUE_NAME=fraud-transactions
+export MNS_ACCESS_KEY_ID=<your-access-key-id>
+export MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
+```
+
+### transaction-api
+
+The producer service listens on `POST /api/v1/transactions` and publishes a JSON transaction event to SMQ.
+
+Example request:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/transactions \
@@ -83,186 +91,127 @@ curl -X POST http://localhost:8080/api/v1/transactions \
   }'
 ```
 
-### Check transaction status
+### fraud-processor
+
+The consumer app polls the queue continuously and processes messages with configurable competing-consumer concurrency:
 
 ```bash
-curl http://localhost:8080/api/v1/transactions/<transaction-id>
+export CONSUMER_POLLER_CONCURRENCY=2
+export CONSUMER_BATCH_SIZE=8
+export CONSUMER_WAIT_SECONDS=15
 ```
 
-### List alerts
+Fraud rules are deliberately stateless so horizontal scaling remains safe without pod-local shared memory.
+
+Configurable rules:
 
 ```bash
-curl http://localhost:8080/api/v1/alerts
+export FRAUD_AMOUNT_THRESHOLD=10000
 ```
 
-## Local Run
+Watchlists are in:
+
+- [fraud-processor application.yml](/Users/vincent/git-workspace/test-app/fraud-processor/src/main/resources/application.yml)
+
+### Telegram alerts
+
+Telegram notifications are sent only by `fraud-processor`.
 
 ```bash
-mvn spring-boot:run
+export TELEGRAM_ENABLED=true
+export TELEGRAM_BOT_TOKEN=<your-bot-token>
+export TELEGRAM_CHAT_ID=<your-chat-id>
 ```
 
-## Telegram Notifications
+## Docker images
 
-To enable Telegram alert delivery, configure:
-
-```yaml
-alert:
-  telegram:
-    enabled: true
-    bot-token: <your-bot-token>
-    chat-id: <target-chat-id-or-username>
-    base-url: https://api.telegram.org
-    disable-notification: false
-```
-
-When enabled, each fraud alert is stored and logged as before, then also sent through the Telegram Bot API.
-
-## Alibaba Cloud Log Service
-
-This project is set up to work well with Alibaba Cloud Simple Log Service by writing structured JSON logs to container `stdout`.
-
-### Logging approach
-
-- The application uses [logback-spring.xml](/Users/vincent/git-workspace/test-app/src/main/resources/logback-spring.xml) to emit JSON logs by default.
-- Logs go to console instead of local files, which is the recommended pattern for Kubernetes collection.
-- You can disable JSON locally by setting `LOGGING_JSON_ENABLED=false`.
-
-Example local run with plain-text logs:
+Build the producer image:
 
 ```bash
-LOGGING_JSON_ENABLED=false mvn spring-boot:run
+docker build -f transaction-api/Dockerfile -t fraud/transaction-api:latest .
 ```
 
-### ACK integration
-
-For Alibaba Cloud ACK, the common pattern is:
-
-1. Deploy the app to ACK.
-2. Enable Simple Log Service collection for pod `stdout` and `stderr`.
-3. Send logs into an SLS `Project` and `Logstore`.
-4. Query the structured JSON fields in SLS.
-
-The deployment manifest already includes basic SLS-friendly annotations and emits logs to stdout:
-
-- [deployment.yaml](/Users/vincent/git-workspace/test-app/k8s/deployment.yaml)
-- [sls-pipeline-config.yaml](/Users/vincent/git-workspace/test-app/k8s/sls-pipeline-config.yaml)
-
-If your ACK cluster uses CRD- or console-based log collection, point collection at this workload’s container stdout. Also enable multiline handling for Java stack traces.
-
-### Example AliyunPipelineConfig
-
-This repo includes a CRD example for SLS collection:
+Build the consumer image:
 
 ```bash
-kubectl apply -f k8s/sls-pipeline-config.yaml
+docker build -f fraud-processor/Dockerfile -t fraud/fraud-processor:latest .
 ```
 
-Before applying it, update these values in [sls-pipeline-config.yaml](/Users/vincent/git-workspace/test-app/k8s/sls-pipeline-config.yaml):
+## Kubernetes on ACK
 
-- `spec.project.name`
-- `spec.project.endpoint`
-- `spec.logstores[0].name`
-- `K8sNamespaceRegex` if your app is not deployed to `default`
+The `k8s/` directory contains separate manifests for both services:
 
-This example:
+- `namespace.yaml`
+- `transaction-api-configmap.yaml`
+- `transaction-api-deployment.yaml`
+- `transaction-api-service.yaml`
+- `transaction-api-hpa.yaml`
+- `fraud-processor-configmap.yaml`
+- `fraud-processor-deployment.yaml`
+- `fraud-processor-hpa.yaml`
 
-- collects `stdout` and `stderr` with `input_container_stdio`
-- filters pods by label `app=fraud-detection`
-- parses JSON from the `content` field
-- flushes logs into the target SLS Logstore
-
-### Verify the CRD
-
-After applying:
+### Deploy
 
 ```bash
-kubectl get clusteraliyunpipelineconfigs
-kubectl get clusteraliyunpipelineconfigs fraud-detection-stdout -o yaml
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/transaction-api-configmap.yaml
+kubectl apply -f k8s/fraud-processor-configmap.yaml
+kubectl apply -f k8s/transaction-api-deployment.yaml
+kubectl apply -f k8s/transaction-api-service.yaml
+kubectl apply -f k8s/transaction-api-hpa.yaml
+kubectl apply -f k8s/fraud-processor-deployment.yaml
+kubectl apply -f k8s/fraud-processor-hpa.yaml
 ```
 
-Look for a successful status on the resource before validating logs in SLS.
+Before deploying, update the image names in:
 
-### Example log fields
+- [transaction-api deployment](/Users/vincent/git-workspace/test-app/k8s/transaction-api-deployment.yaml)
+- [fraud-processor deployment](/Users/vincent/git-workspace/test-app/k8s/fraud-processor-deployment.yaml)
 
-Each log line includes fields such as:
+Create the queue credentials secret:
 
-- `@timestamp`
-- `app`
-- `level`
-- `logger`
-- `thread`
-- `message`
-- `trace`
-- `span`
-
-### Recommended SLS setup
-
-- Create an SLS `Project`
-- Create a `Logstore` such as `fraud-detection-prod`
-- Configure ACK log collection for this deployment
-- Use JSON extraction in SLS so fields are queryable
-- Enable multiline merge for stack traces
-
-### Suggested SLS queries
-
-```text
-app: fraud-detection
+```bash
+kubectl -n fraud-platform create secret generic mns-credentials \
+  --from-literal=MNS_ACCESS_KEY_ID=<your-access-key-id> \
+  --from-literal=MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
 ```
 
-```text
-app: fraud-detection and level: ERROR
+### Verify
+
+```bash
+kubectl get pods -n fraud-platform
+kubectl get svc -n fraud-platform
+kubectl get hpa -n fraud-platform
+kubectl logs -n fraud-platform deploy/transaction-api
+kubectl logs -n fraud-platform deploy/fraud-processor
 ```
 
-```text
-app: fraud-detection and message: fraud-alert
-```
+## Horizontal scaling notes
 
-```text
-logger: com.vincent.fraud.service.AlertService
-```
+- `transaction-api` scales behind `transaction-api-service`
+- `fraud-processor` scales as multiple queue consumers
+- failed messages are not deleted from SMQ, so they can be retried after the queue visibility timeout
+- because the rules are stateless, processing stays replica-safe
 
-### Useful references
+If you later need stateful rules such as transaction velocity across replicas, introduce a shared external state store such as Redis, Tair, or a database rather than pod-local memory.
 
-- [Alibaba Cloud Simple Log Service: Kubernetes container log collection](https://www.alibabacloud.com/help/doc-detail/2878919.html)
-- [Alibaba Cloud ACK: collect application logs with Log Service](https://www.alibabacloud.com/help/en/ack/serverless-kubernetes/user-guide/use-log-service-to-collect-application-logs)
+## Testing
 
-## Test
+Run all module tests:
 
 ```bash
 mvn test
-mvn verify
 ```
 
-JaCoCo HTML coverage output is generated under `target/site/jacoco/index.html` after `mvn verify`.
-
-## Kubernetes
-
-Manifests are available in `k8s/`:
-
-- `deployment.yaml`
-- `service.yaml`
-- `hpa.yaml`
-- `configmap.yaml`
-- `sls-pipeline-config.yaml`
-
-Apply them with:
+Run one module:
 
 ```bash
-kubectl apply -f k8s/
+mvn -pl transaction-api test
+mvn -pl fraud-processor test
 ```
 
-For production, build the application image and update `your-registry/fraud-detection:latest` in the deployment manifest.
+## Alibaba Cloud references
 
-## Resilience Notes
-
-- Multiple replicas are configured to reduce single-pod failure risk.
-- Liveness and readiness probes support pod restart and traffic draining.
-- Horizontal Pod Autoscaler handles CPU-based scale-out.
-- The queue boundary decouples ingestion from fraud analysis, reducing end-user latency.
-
-## Future Improvements
-
-- Replace the in-memory queue with SQS, Pub/Sub, or Alibaba Message Service.
-- Persist transactions and alerts in a durable database.
-- Add distributed tracing and externalized audit storage.
-- Introduce dead-letter queue handling and retry policies.
+- [Java SDK for Alibaba Cloud MNS](https://www.alibabacloud.com/help/en/mns/developer-reference/java-sdk-send-message)
+- [Receive messages with the Java SDK](https://www.alibabacloud.com/help/en/mns/developer-reference/java-sdk-receive-message)
+- [ACK deployment with kubectl](https://www.alibabacloud.com/help/en/ack/ack-managed-and-ack-dedicated/getting-started/use-the-nginx-image-supported-by-ack-to-deploy-stateless-applications)
