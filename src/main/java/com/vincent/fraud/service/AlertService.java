@@ -16,9 +16,11 @@ public class AlertService {
     private static final Logger log = LoggerFactory.getLogger(AlertService.class);
 
     private final AlertRepository alertRepository;
+    private final List<AlertNotifier> alertNotifiers;
 
-    public AlertService(AlertRepository alertRepository) {
+    public AlertService(AlertRepository alertRepository, List<AlertNotifier> alertNotifiers) {
         this.alertRepository = alertRepository;
+        this.alertNotifiers = alertNotifiers;
     }
 
     public void raise(Transaction transaction, List<String> reasons) {
@@ -34,5 +36,6 @@ public class AlertService {
         alertRepository.save(alert);
         log.warn("fraud-alert transactionId={} accountId={} severity={} reasons={}",
                 transaction.id(), transaction.accountId(), severity, reasons);
+        alertNotifiers.forEach(notifier -> notifier.notify(alert, transaction));
     }
 }

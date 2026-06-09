@@ -8,6 +8,7 @@ This repository contains a Java Spring Boot implementation of a real-time fraud 
 - Asynchronous queue-backed fraud analysis pipeline.
 - Rule-based detection for high amount, suspicious accounts, and velocity bursts.
 - Alert generation with severity classification.
+- Optional Telegram bot notifications for flagged alerts.
 - Kubernetes deployment manifests with probes and autoscaling.
 - Unit and integration tests with JaCoCo coverage report generation.
 
@@ -62,6 +63,7 @@ sequenceDiagram
 - `FraudRule` isolates each detection rule, making the rules engine easy to test and evolve.
 - `Actuator` exposes liveness and readiness probes for Kubernetes.
 - `In-memory repositories` keep this sample self-contained. In production, replace them with PostgreSQL, Redis, or a streaming store.
+- `AlertNotifier` keeps outbound notifications modular, so Telegram can be swapped or supplemented with other channels later.
 
 ## API
 
@@ -97,6 +99,22 @@ curl http://localhost:8080/api/v1/alerts
 ```bash
 mvn spring-boot:run
 ```
+
+## Telegram Notifications
+
+To enable Telegram alert delivery, configure:
+
+```yaml
+alert:
+  telegram:
+    enabled: true
+    bot-token: <your-bot-token>
+    chat-id: <target-chat-id-or-username>
+    base-url: https://api.telegram.org
+    disable-notification: false
+```
+
+When enabled, each fraud alert is stored and logged as before, then also sent through the Telegram Bot API.
 
 ## Test
 

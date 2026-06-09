@@ -18,3 +18,11 @@ fraud:
   suspicious-accounts:
     - acct-blacklist-001
     - acct-blacklist-002
+
+alert:
+  telegram:
+    enabled: false
+    bot-token: ""
+    chat-id: ""
+    base-url: https://api.telegram.org
+    disable-notification: false

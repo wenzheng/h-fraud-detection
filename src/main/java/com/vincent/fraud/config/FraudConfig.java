@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(FraudProperties.class)
+@EnableConfigurationProperties({FraudProperties.class, TelegramProperties.class})
 public class FraudConfig {
 
     @Bean(destroyMethod = "shutdown")
