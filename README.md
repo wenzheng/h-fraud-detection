@@ -128,12 +128,14 @@ export TELEGRAM_CHAT_ID=<your-chat-id>
 Build the producer image:
 
 ```bash
+mvn -pl transaction-api -am -DskipTests package
 docker build -f transaction-api/Dockerfile -t fraud/transaction-api:latest .
 ```
 
 Build the consumer image:
 
 ```bash
+mvn -pl fraud-processor -am -DskipTests package
 docker build -f fraud-processor/Dockerfile -t fraud/fraud-processor:latest .
 ```
 
