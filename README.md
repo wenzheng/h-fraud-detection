@@ -47,6 +47,13 @@ mvn -pl transaction-api -am -DskipTests package
 mvn -pl fraud-processor -am -DskipTests package
 ```
 
+By default, `package` now builds the jar and then builds the Docker image for each application.
+To skip Docker image creation, add:
+
+```bash
+-Ddocker.skip=true
+```
+
 ## Local run
 
 Run the HTTP ingress app:
@@ -125,18 +132,22 @@ export TELEGRAM_CHAT_ID=<your-chat-id>
 
 ## Docker images
 
-Build the producer image:
+The Maven `package` phase builds Docker images automatically from the module Dockerfiles:
 
 ```bash
 mvn -pl transaction-api -am -DskipTests package
-docker build -f transaction-api/Dockerfile -t fraud/transaction-api:latest .
+mvn -pl fraud-processor -am -DskipTests package
 ```
 
-Build the consumer image:
+Default image names:
+
+- `fraud/transaction-api:0.0.1-SNAPSHOT`
+- `fraud/fraud-processor:0.0.1-SNAPSHOT`
+
+You can override the image prefix:
 
 ```bash
-mvn -pl fraud-processor -am -DskipTests package
-docker build -f fraud-processor/Dockerfile -t fraud/fraud-processor:latest .
+mvn -pl transaction-api -am -DskipTests -Ddocker.image.prefix=registry.cn-hangzhou.aliyuncs.com/your-namespace package
 ```
 
 ## Kubernetes on ACK

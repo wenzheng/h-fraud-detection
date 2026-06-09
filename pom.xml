@@ -28,6 +28,8 @@
         <maven.compiler.release>17</maven.compiler.release>
         <logstash.logback.encoder.version>8.0</logstash.logback.encoder.version>
         <aliyun.mns.sdk.version>1.1.10</aliyun.mns.sdk.version>
+        <dockerfile.maven.plugin.version>1.4.13</dockerfile.maven.plugin.version>
+        <docker.image.prefix>fraud</docker.image.prefix>
     </properties>
 
     <dependencyManagement>
