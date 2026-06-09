@@ -22,6 +22,8 @@ spec:
             - containerPort: 8080
           envFrom:
             - configMapRef:
+                name: fraud-platform-shared-config
+            - configMapRef:
                 name: transaction-api-config
             - secretRef:
                 name: mns-credentials

@@ -142,6 +142,7 @@ docker build -f fraud-processor/Dockerfile -t fraud/fraud-processor:latest .
 The `k8s/` directory contains separate manifests for both services:
 
 - `namespace.yaml`
+- `shared-configmap.yaml`
 - `transaction-api-configmap.yaml`
 - `transaction-api-deployment.yaml`
 - `transaction-api-service.yaml`
@@ -154,6 +155,7 @@ The `k8s/` directory contains separate manifests for both services:
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/shared-configmap.yaml
 kubectl apply -f k8s/transaction-api-configmap.yaml
 kubectl apply -f k8s/fraud-processor-configmap.yaml
 kubectl apply -f k8s/transaction-api-deployment.yaml
@@ -175,6 +177,15 @@ kubectl -n fraud-platform create secret generic mns-credentials \
   --from-literal=MNS_ACCESS_KEY_ID=<your-access-key-id> \
   --from-literal=MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
 ```
+
+Shared values such as `MNS_ENDPOINT`, `MNS_QUEUE_NAME`, and `LOGGING_JSON_ENABLED` now live in:
+
+- [shared-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/shared-configmap.yaml)
+
+App-specific knobs stay in:
+
+- [transaction-api-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/transaction-api-configmap.yaml)
+- [fraud-processor-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/fraud-processor-configmap.yaml)
 
 ### Verify
 

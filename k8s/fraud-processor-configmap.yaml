@@ -4,9 +4,7 @@ metadata:
   name: fraud-processor-config
   namespace: fraud-platform
 data:
-  MNS_ENDPOINT: http://your-account-id.mns.cn-hangzhou.aliyuncs.com/
-  MNS_QUEUE_NAME: fraud-transactions
-  LOGGING_JSON_ENABLED: "true"
+  SPRING_APPLICATION_NAME: fraud-processor
   CONSUMER_POLLER_CONCURRENCY: "2"
   CONSUMER_BATCH_SIZE: "8"
   CONSUMER_WAIT_SECONDS: "15"
