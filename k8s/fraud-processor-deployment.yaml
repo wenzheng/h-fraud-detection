@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: fraud-processor
-          image: registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest
+          image: ghcr.io/wenzheng/h-fraud-detection-fraud-processor:latest
           ports:
             - containerPort: 8080
           envFrom:

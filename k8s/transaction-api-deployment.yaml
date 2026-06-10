@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: transaction-api
-          image: registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest
+          image: ghcr.io/wenzheng/h-fraud-detection-transaction-api:latest
           ports:
             - containerPort: 8080
           envFrom:

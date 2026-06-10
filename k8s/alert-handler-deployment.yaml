@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: alert-handler
-          image: registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest
+          image: ghcr.io/wenzheng/h-fraud-detection-alert-handler:latest
           ports:
             - containerPort: 8080
           envFrom:
