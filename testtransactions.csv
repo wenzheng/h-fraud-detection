@@ -1,0 +1,5 @@
+accountId,merchantId,deviceId,ipAddress,currency,amount,occurredAt
+acct-normal-001,merchant-normal-001,device-001,10.0.0.1,USD,120.50,2026-06-11T00:30:00Z
+acct-blacklist-001,merchant-normal-002,device-002,10.0.0.2,USD,88.00,2026-06-11T00:31:00Z
+acct-normal-003,merchant-high-risk-001,device-003,10.0.0.3,USD,50.00,
+acct-normal-004,merchant-normal-004,device-004,10.0.0.4,USD,15000.00,

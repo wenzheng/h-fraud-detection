@@ -27,10 +27,10 @@ public class FraudProcessorConfig {
         String endpoint = MnsEndpointResolver.resolve(properties.endpoint());
         log.info("Creating MNS client for fraud-processor with endpoint={}", endpoint);
         CloudAccount account = new CloudAccount(
-                endpoint,
                 properties.accessKeyId(),
-                properties.accessKeySecret()
-        );
+                properties.accessKeySecret(),
+                endpoint
+                );
         return account.getMNSClient();
     }
 
