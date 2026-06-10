@@ -27,10 +27,10 @@ public class AlertHandlerConfig {
         String endpoint = MnsEndpointResolver.resolve(properties.endpoint());
         log.info("Creating MNS client for alert-handler with endpoint={}", endpoint);
         CloudAccount account = new CloudAccount(
-                endpoint,
                 properties.accessKeyId(),
-                properties.accessKeySecret()
-        );
+                properties.accessKeySecret(),
+                endpoint
+                );
         return account.getMNSClient();
     }
 
