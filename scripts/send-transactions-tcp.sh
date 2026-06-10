@@ -83,6 +83,14 @@ submit_transaction() {
   local response
   response="$(cat "${response_file}")"
   rm -f "${response_file}"
+  local status
+  status="$(printf '%s' "${response}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')"
+  if [[ -z "${status}" ]]; then
+    status="$(printf '%s' "${response}" | sed -n 's/.*"error":"\([^"]*\)".*/\1/p')"
+  fi
+  if [[ -z "${status}" ]]; then
+    status="UNKNOWN"
+  fi
 
   request_count=$((request_count + 1))
   latency_sum_ms="$(awk -v total="${latency_sum_ms}" -v value="${latency_ms}" 'BEGIN { printf "%.3f", total + value }')"
@@ -93,7 +101,7 @@ submit_transaction() {
     latency_max_ms="${latency_ms}"
   fi
 
-  echo "line=${line_number} latencyMs=${latency_ms}"
+  echo "line=${line_number} status=${status} latencyMs=${latency_ms}"
   echo "${response}"
   echo
 }
