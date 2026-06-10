@@ -49,13 +49,10 @@ public class MnsAlertConsumerLifecycle implements SmartLifecycle {
         }
     }
 
-    private void pollLoop() {
+    void pollLoop() {
         while (running.get()) {
             try {
-                List<Message> messages = alertQueue.batchPopMessage(
-                        properties.batchSize(),
-                        properties.waitSeconds()
-                );
+                List<Message> messages = popMessages();
                 if (messages == null || messages.isEmpty()) {
                     continue;
                 }
@@ -70,15 +67,26 @@ public class MnsAlertConsumerLifecycle implements SmartLifecycle {
         }
     }
 
-    private void processMessage(Message message) {
+    void processMessage(Message message) {
         try {
             AlertEvent event = objectMapper.readValue(message.getMessageBodyAsRawString(), AlertEvent.class);
             alertRoutingService.route(event);
-            alertQueue.deleteMessage(message.getReceiptHandle());
+            acknowledgeMessage(message);
         } catch (Exception exception) {
             log.error("Failed to process alert messageId={} receiptHandle={}",
                     message.getMessageId(), message.getReceiptHandle(), exception);
         }
+    }
+
+    List<Message> popMessages() {
+        return alertQueue.batchPopMessage(
+                properties.batchSize(),
+                properties.waitSeconds()
+        );
+    }
+
+    void acknowledgeMessage(Message message) {
+        alertQueue.deleteMessage(message.getReceiptHandle());
     }
 
     @Override
