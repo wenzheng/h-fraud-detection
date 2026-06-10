@@ -27,3 +27,6 @@ app:
     transaction-queue-name: ${MNS_TRANSACTION_QUEUE_NAME:fraud-transactions}
     access-key-id: ${MNS_ACCESS_KEY_ID:replace-me}
     access-key-secret: ${MNS_ACCESS_KEY_SECRET:replace-me}
+  tcp:
+    port: ${TCP_PORT:8000}
+    worker-threads: ${TCP_WORKER_THREADS:4}
