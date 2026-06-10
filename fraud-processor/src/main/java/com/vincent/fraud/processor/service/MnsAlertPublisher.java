@@ -23,7 +23,11 @@ public class MnsAlertPublisher implements AlertPublisher {
     public String publish(AlertEvent alertEvent) {
         Message message = new Message();
         message.setMessageBodyAsRawString(serialize(alertEvent));
-        return alertQueue.putMessage(message).getMessageId();
+        return putMessage(message).getMessageId();
+    }
+
+    Message putMessage(Message message) {
+        return alertQueue.putMessage(message);
     }
 
     private String serialize(AlertEvent alertEvent) {

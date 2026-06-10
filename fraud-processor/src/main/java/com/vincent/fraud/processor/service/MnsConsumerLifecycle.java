@@ -50,13 +50,10 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
         }
     }
 
-    private void pollLoop() {
+    void pollLoop() {
         while (running.get()) {
             try {
-                List<Message> messages = transactionQueue.batchPopMessage(
-                        properties.batchSize(),
-                        properties.waitSeconds()
-                );
+                List<Message> messages = popMessages();
                 if (messages == null || messages.isEmpty()) {
                     continue;
                 }
@@ -71,15 +68,26 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
         }
     }
 
-    private void processMessage(Message message) {
+    void processMessage(Message message) {
         try {
             TransactionEvent event = objectMapper.readValue(message.getMessageBodyAsRawString(), TransactionEvent.class);
             fraudProcessingService.process(event);
-            transactionQueue.deleteMessage(message.getReceiptHandle());
+            acknowledgeMessage(message);
         } catch (Exception exception) {
             log.error("Failed to process messageId={} receiptHandle={}",
                     message.getMessageId(), message.getReceiptHandle(), exception);
         }
+    }
+
+    List<Message> popMessages() {
+        return transactionQueue.batchPopMessage(
+                properties.batchSize(),
+                properties.waitSeconds()
+        );
+    }
+
+    void acknowledgeMessage(Message message) {
+        transactionQueue.deleteMessage(message.getReceiptHandle());
     }
 
     @Override

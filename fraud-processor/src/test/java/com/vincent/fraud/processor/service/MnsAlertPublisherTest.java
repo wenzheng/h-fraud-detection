@@ -3,6 +3,7 @@ package com.vincent.fraud.processor.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.aliyun.mns.model.Message;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -15,6 +16,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class MnsAlertPublisherTest {
+
+    @Test
+    void shouldPublishAlertMessage() {
+        RecordingMnsAlertPublisher publisher = new RecordingMnsAlertPublisher();
+
+        String messageId = publisher.publish(alert());
+
+        assertThat(messageId).isEqualTo("msg-1");
+        assertThat(publisher.publishedMessage.getMessageBodyAsRawString()).contains("\"alertId\":\"alert-1\"");
+    }
 
     @Test
     void shouldSerializeAlertEvent() {
@@ -61,5 +72,22 @@ class MnsAlertPublisherTest {
                 now,
                 now
         );
+    }
+
+    private static final class RecordingMnsAlertPublisher extends MnsAlertPublisher {
+
+        private Message publishedMessage;
+
+        private RecordingMnsAlertPublisher() {
+            super(null, JsonMapper.builder().addModule(new JavaTimeModule()).build());
+        }
+
+        @Override
+        Message putMessage(Message message) {
+            this.publishedMessage = message;
+            Message result = new Message();
+            result.setMessageId("msg-1");
+            return result;
+        }
     }
 }
