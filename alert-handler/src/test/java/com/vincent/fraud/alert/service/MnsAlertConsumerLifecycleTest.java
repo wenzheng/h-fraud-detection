@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.aliyun.mns.common.ClientException;
 import com.aliyun.mns.model.Message;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vincent.fraud.shared.model.AlertEvent;
@@ -116,6 +118,28 @@ class MnsAlertConsumerLifecycleTest {
 
         assertThat(routingService.routedAlerts).isEmpty();
         assertThat(lifecycle.acknowledgedReceiptHandles).isEmpty();
+    }
+
+    @Test
+    void shouldAcknowledgeMessageWhenPayloadIsMalformedJson() {
+        RecordingAlertRoutingService routingService = new RecordingAlertRoutingService();
+        ObjectMapper failingObjectMapper = new ObjectMapper() {
+            @Override
+            public <T> T readValue(String content, Class<T> valueType) throws JsonProcessingException {
+                throw new JsonParseException(null, "bad json");
+            }
+        };
+        TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                failingObjectMapper,
+                routingService
+        );
+        Message message = message("msg-1", "rh-1", "dGVzdA");
+
+        lifecycle.processMessage(message);
+
+        assertThat(routingService.routedAlerts).isEmpty();
+        assertThat(lifecycle.acknowledgedReceiptHandles).containsExactly("rh-1");
     }
 
     @Test

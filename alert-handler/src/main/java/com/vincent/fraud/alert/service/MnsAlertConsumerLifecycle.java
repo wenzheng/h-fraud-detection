@@ -3,6 +3,7 @@ package com.vincent.fraud.alert.service;
 import com.aliyun.mns.client.CloudQueue;
 import com.aliyun.mns.common.ClientException;
 import com.aliyun.mns.model.Message;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vincent.fraud.alert.config.ConsumerProperties;
 import com.vincent.fraud.shared.model.AlertEvent;
@@ -76,6 +77,10 @@ public class MnsAlertConsumerLifecycle implements SmartLifecycle {
         try {
             AlertEvent event = objectMapper.readValue(message.getMessageBodyAsRawString(), AlertEvent.class);
             alertRoutingService.route(event);
+            acknowledgeMessage(message);
+        } catch (JsonProcessingException exception) {
+            log.error("Discarding malformed alert messageId={} receiptHandle={}",
+                    message.getMessageId(), message.getReceiptHandle(), exception);
             acknowledgeMessage(message);
         } catch (Exception exception) {
             log.error("Failed to process alert messageId={} receiptHandle={}",
