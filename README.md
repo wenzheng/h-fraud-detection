@@ -81,7 +81,7 @@ export MNS_ACCESS_KEY_ID=<your-access-key-id>
 export MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
 ```
 
-Shared Kubernetes values live in [k8s/shared-configmap.yaml](/Users/vincent/git-workspace/test-app/k8s/shared-configmap.yaml).
+Shared Kubernetes values are now created by the GitHub Actions deploy job from GitHub Variables.
 
 ## Application behavior
 
@@ -211,4 +211,10 @@ Create the MNS credentials secret:
 kubectl -n fraud-platform create secret generic mns-credentials \
   --from-literal=MNS_ACCESS_KEY_ID=<your-access-key-id> \
   --from-literal=MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
+
+If you deploy through GitHub Actions, configure these GitHub Variables instead of applying a shared ConfigMap file manually:
+
+- `MNS_ENDPOINT`
+- `MNS_TRANSACTION_QUEUE_NAME`
+- `MNS_ALERT_QUEUE_NAME`
 ```

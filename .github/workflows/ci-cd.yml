@@ -183,6 +183,31 @@ jobs:
           chmod 600 "${HOME}/.kube/config"
           kubectl get namespace
 
+      - name: Create or update MNS credentials secret
+        shell: bash
+        env:
+          MNS_ACCESS_KEY_ID: ${{ secrets.MNS_ACCESS_KEY_ID }}
+          MNS_ACCESS_KEY_SECRET: ${{ secrets.MNS_ACCESS_KEY_SECRET }}
+        run: |
+          kubectl -n fraud-platform create secret generic mns-credentials \
+            --from-literal=MNS_ACCESS_KEY_ID="${MNS_ACCESS_KEY_ID}" \
+            --from-literal=MNS_ACCESS_KEY_SECRET="${MNS_ACCESS_KEY_SECRET}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create or update shared MNS config
+        shell: bash
+        env:
+          MNS_ENDPOINT: ${{ vars.MNS_ENDPOINT }}
+          MNS_TRANSACTION_QUEUE_NAME: ${{ vars.MNS_TRANSACTION_QUEUE_NAME }}
+          MNS_ALERT_QUEUE_NAME: ${{ vars.MNS_ALERT_QUEUE_NAME }}
+        run: |
+          kubectl -n fraud-platform create configmap fraud-platform-shared-config \
+            --from-literal=MNS_ENDPOINT="${MNS_ENDPOINT}" \
+            --from-literal=MNS_TRANSACTION_QUEUE_NAME="${MNS_TRANSACTION_QUEUE_NAME}" \
+            --from-literal=MNS_ALERT_QUEUE_NAME="${MNS_ALERT_QUEUE_NAME}" \
+            --from-literal=LOGGING_JSON_ENABLED="true" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Compute GHCR image names
         id: images
         shell: bash
@@ -197,7 +222,6 @@ jobs:
       - name: Apply base manifests
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/shared-configmap.yaml
           kubectl apply -f k8s/transaction-api-configmap.yaml
           kubectl apply -f k8s/fraud-processor-configmap.yaml
           kubectl apply -f k8s/alert-handler-configmap.yaml
