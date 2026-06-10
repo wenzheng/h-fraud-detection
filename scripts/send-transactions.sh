@@ -5,6 +5,10 @@ set -euo pipefail
 BASE_URL="${BASE_URL:-http://localhost:8080}"
 ENDPOINT="${ENDPOINT:-$BASE_URL/api/v1/transactions}"
 INPUT_FILE="${1:-}"
+request_count=0
+latency_sum_ms=0
+latency_min_ms=""
+latency_max_ms=0
 
 usage() {
   cat <<'EOF'
@@ -80,21 +84,50 @@ EOF
 submit_transaction() {
   local line_number="$1"
   local payload="$2"
+  local body_file
+  body_file="$(mktemp)"
 
-  local response
-  response="$(curl -sS -w '\n%{http_code}' \
+  local metrics
+  metrics="$(curl -sS -o "${body_file}" -w '%{http_code} %{time_total}' \
     -X POST "${ENDPOINT}" \
     -H 'Content-Type: application/json' \
     -d "${payload}")"
 
   local status
-  status="$(printf '%s\n' "${response}" | tail -n 1)"
+  status="$(printf '%s' "${metrics}" | awk '{print $1}')"
+  local time_total_seconds
+  time_total_seconds="$(printf '%s' "${metrics}" | awk '{print $2}')"
+  local latency_ms
+  latency_ms="$(awk -v seconds="${time_total_seconds}" 'BEGIN { printf "%.3f", seconds * 1000 }')"
   local body
-  body="$(printf '%s\n' "${response}" | sed '$d')"
+  body="$(cat "${body_file}")"
+  rm -f "${body_file}"
 
-  echo "line=${line_number} status=${status}"
+  request_count=$((request_count + 1))
+  latency_sum_ms="$(awk -v total="${latency_sum_ms}" -v value="${latency_ms}" 'BEGIN { printf "%.3f", total + value }')"
+  if [[ -z "${latency_min_ms}" ]] || awk -v value="${latency_ms}" -v min="${latency_min_ms:-0}" 'BEGIN { exit !(value < min) }'; then
+    latency_min_ms="${latency_ms}"
+  fi
+  if awk -v value="${latency_ms}" -v max="${latency_max_ms}" 'BEGIN { exit !(value > max) }'; then
+    latency_max_ms="${latency_ms}"
+  fi
+
+  echo "line=${line_number} status=${status} latencyMs=${latency_ms}"
   echo "${body}"
   echo
+}
+
+print_latency_summary() {
+  if [[ "${request_count}" -eq 0 ]]; then
+    echo "No transactions were sent."
+    return
+  fi
+
+  local latency_avg_ms
+  latency_avg_ms="$(awk -v total="${latency_sum_ms}" -v count="${request_count}" 'BEGIN { printf "%.3f", total / count }')"
+
+  echo "Latency summary"
+  echo "requests=${request_count} avgMs=${latency_avg_ms} minMs=${latency_min_ms} maxMs=${latency_max_ms}"
 }
 
 line_number=0
@@ -135,3 +168,5 @@ while IFS= read -r raw_line || [[ -n "${raw_line}" ]]; do
   payload="$(build_payload "${account_id}" "${merchant_id}" "${device_id}" "${ip_address}" "${currency}" "${amount}" "${occurred_at}")"
   submit_transaction "${line_number}" "${payload}"
 done < "${INPUT_FILE}"
+
+print_latency_summary
