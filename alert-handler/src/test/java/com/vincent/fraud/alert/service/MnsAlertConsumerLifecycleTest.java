@@ -1,6 +1,7 @@
 package com.vincent.fraud.alert.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.aliyun.mns.common.ClientException;
 import com.aliyun.mns.model.Message;
@@ -179,6 +180,27 @@ class MnsAlertConsumerLifecycleTest {
     }
 
     @Test
+    void shouldContinueWhenQueueReportsNoMessagesAvailable() {
+        TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingAlertRoutingService()
+        );
+        lifecycle.clientExceptionToThrow = new ClientException(
+                MESSAGE_NOT_EXIST_ERROR_CODE,
+                "Message not exist.",
+                "req-1",
+                null
+        );
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+        assertThat(lifecycle.acknowledgedReceiptHandles).isEmpty();
+    }
+
+    @Test
     void shouldHandleUnexpectedClientExceptionInPollLoop() {
         TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
                 new ConsumerProperties(1, 1, 1),
@@ -227,6 +249,22 @@ class MnsAlertConsumerLifecycleTest {
         assertThat(lifecycle.deletedReceiptHandle).isEqualTo("rh-1");
     }
 
+    @Test
+    void shouldExecuteConcreteQueueDelegateMethods() {
+        MnsAlertConsumerLifecycle lifecycle = new MnsAlertConsumerLifecycle(
+                null,
+                new ConsumerProperties(1, 2, 5),
+                new RecordingExecutorService(),
+                objectMapper(),
+                new RecordingAlertRoutingService()
+        );
+
+        assertThatThrownBy(() -> lifecycle.batchPopMessage(2, 5))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> lifecycle.deleteMessage("rh-1"))
+                .isInstanceOf(NullPointerException.class);
+    }
+
     private ObjectMapper objectMapper() {
         return JsonMapper.builder()
                 .addModule(new JavaTimeModule())
@@ -272,6 +310,8 @@ class MnsAlertConsumerLifecycleTest {
             routedAlerts.add(alertEvent);
         }
     }
+
+    private static final String MESSAGE_NOT_EXIST_ERROR_CODE = "MessageNotExist";
 
     private static final class TestableMnsAlertConsumerLifecycle extends MnsAlertConsumerLifecycle {
 
