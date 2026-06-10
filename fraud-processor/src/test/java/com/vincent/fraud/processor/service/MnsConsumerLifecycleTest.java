@@ -2,6 +2,7 @@ package com.vincent.fraud.processor.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.aliyun.mns.common.ClientException;
 import com.aliyun.mns.model.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -93,6 +94,18 @@ class MnsConsumerLifecycleTest {
 
         assertThat(processingService.processedTransactions).isEmpty();
         assertThat(lifecycle.acknowledgedReceiptHandles).isEmpty();
+    }
+
+    @Test
+    void shouldTreatMessageNotExistAsEmptyQueue() {
+        TestableMnsConsumerLifecycle lifecycle = new TestableMnsConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingFraudProcessingService()
+        );
+
+        assertThat(lifecycle.isQueueEmpty(new ClientException("Message not exist", "MessageNotExist"))).isTrue();
+        assertThat(lifecycle.isQueueEmpty(new ClientException("boom", "OtherError"))).isFalse();
     }
 
     private ObjectMapper objectMapper() {

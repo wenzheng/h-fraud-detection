@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class MnsConsumerLifecycle implements SmartLifecycle {
 
     private static final Logger log = LoggerFactory.getLogger(MnsConsumerLifecycle.class);
+    private static final String MESSAGE_NOT_EXIST = "MessageNotExist";
 
     private final CloudQueue transactionQueue;
     private final ConsumerProperties properties;
@@ -61,6 +62,10 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
                     processMessage(message);
                 }
             } catch (ClientException exception) {
+                if (isQueueEmpty(exception)) {
+                    log.debug("No transaction messages available in Alibaba Cloud SMQ");
+                    continue;
+                }
                 log.error("Failed to poll messages from Alibaba Cloud SMQ", exception);
             } catch (Exception exception) {
                 log.error("Unexpected error in MNS consumer loop", exception);
@@ -88,6 +93,10 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
 
     void acknowledgeMessage(Message message) {
         transactionQueue.deleteMessage(message.getReceiptHandle());
+    }
+
+    boolean isQueueEmpty(ClientException exception) {
+        return MESSAGE_NOT_EXIST.equals(exception.getErrorCode());
     }
 
     @Override

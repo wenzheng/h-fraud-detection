@@ -2,6 +2,7 @@ package com.vincent.fraud.alert.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.aliyun.mns.common.ClientException;
 import com.aliyun.mns.model.Message;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -115,6 +116,18 @@ class MnsAlertConsumerLifecycleTest {
 
         assertThat(routingService.routedAlerts).isEmpty();
         assertThat(lifecycle.acknowledgedReceiptHandles).isEmpty();
+    }
+
+    @Test
+    void shouldTreatMessageNotExistAsEmptyQueue() {
+        TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingAlertRoutingService()
+        );
+
+        assertThat(lifecycle.isQueueEmpty(new ClientException("Message not exist", "MessageNotExist"))).isTrue();
+        assertThat(lifecycle.isQueueEmpty(new ClientException("boom", "OtherError"))).isFalse();
     }
 
     private ObjectMapper objectMapper() {
