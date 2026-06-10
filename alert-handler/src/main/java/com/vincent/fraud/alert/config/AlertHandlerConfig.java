@@ -3,8 +3,11 @@ package com.vincent.fraud.alert.config;
 import com.aliyun.mns.client.CloudAccount;
 import com.aliyun.mns.client.CloudQueue;
 import com.aliyun.mns.client.MNSClient;
+import com.vincent.fraud.shared.mns.MnsEndpointResolver;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,10 +20,14 @@ import org.springframework.context.annotation.Configuration;
 })
 public class AlertHandlerConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(AlertHandlerConfig.class);
+
     @Bean(destroyMethod = "close")
     MNSClient mnsClient(MnsProperties properties) {
+        String endpoint = MnsEndpointResolver.resolve(properties.endpoint());
+        log.info("Creating MNS client for alert-handler with endpoint={}", endpoint);
         CloudAccount account = new CloudAccount(
-                properties.endpoint(),
+                endpoint,
                 properties.accessKeyId(),
                 properties.accessKeySecret()
         );
