@@ -15,9 +15,11 @@ spec:
       labels:
         app: alert-handler
     spec:
+      imagePullSecrets:
+        - name: acr-credentials
       containers:
         - name: alert-handler
-          image: ghcr.io/wenzheng/h-fraud-detection-alert-handler:latest
+          image: registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest
           ports:
             - containerPort: 8080
           envFrom:

@@ -15,7 +15,8 @@ permissions:
   packages: write
 
 env:
-  REGISTRY: ghcr.io
+  ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
+  ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
 
 jobs:
   test-and-coverage:
@@ -124,28 +125,15 @@ jobs:
         id: image
         shell: bash
         run: |
-          OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-          REPO_LC="$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
-          IMAGE_NAME="${REGISTRY}/${OWNER_LC}/${REPO_LC}-${{ matrix.service }}"
+          IMAGE_NAME="${ACR_REGISTRY}/${ACR_NAMESPACE}/${{ matrix.service }}"
           echo "image=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.image.outputs.image }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-
-      - name: Log in to GHCR
+      - name: Log in to Alibaba Cloud Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ vars.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push image
         uses: docker/build-push-action@v6
@@ -153,8 +141,9 @@ jobs:
           context: .
           file: ./${{ matrix.service }}/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ steps.image.outputs.image }}:latest
+            ${{ steps.image.outputs.image }}:${{ github.sha }}
 
   deploy-to-ack:
     runs-on: ubuntu-latest
@@ -184,6 +173,21 @@ jobs:
           chmod 600 "${HOME}/.kube/config"
           kubectl get namespace
 
+      - name: Create or update ACR image pull secret
+        shell: bash
+        env:
+          ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          ACR_EMAIL: ${{ secrets.ACR_EMAIL }}
+        run: |
+          kubectl -n fraud-platform create secret docker-registry acr-credentials \
+            --docker-server="${ACR_REGISTRY}" \
+            --docker-username="${ACR_USERNAME}" \
+            --docker-password="${ACR_PASSWORD}" \
+            --docker-email="${ACR_EMAIL}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Create or update MNS credentials secret
         shell: bash
         env:
@@ -209,16 +213,14 @@ jobs:
             --from-literal=LOGGING_JSON_ENABLED="true" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Compute GHCR image names
+      - name: Compute ACR image names
         id: images
         shell: bash
         run: |
-          OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-          REPO_LC="$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
           TAG="latest"
-          echo "transaction_api=${REGISTRY}/${OWNER_LC}/${REPO_LC}-transaction-api:${TAG}" >> "${GITHUB_OUTPUT}"
-          echo "fraud_processor=${REGISTRY}/${OWNER_LC}/${REPO_LC}-fraud-processor:${TAG}" >> "${GITHUB_OUTPUT}"
-          echo "alert_handler=${REGISTRY}/${OWNER_LC}/${REPO_LC}-alert-handler:${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "transaction_api=${ACR_REGISTRY}/${ACR_NAMESPACE}/transaction-api:${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "fraud_processor=${ACR_REGISTRY}/${ACR_NAMESPACE}/fraud-processor:${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "alert_handler=${ACR_REGISTRY}/${ACR_NAMESPACE}/alert-handler:${TAG}" >> "${GITHUB_OUTPUT}"
 
       - name: Apply base manifests
         run: |

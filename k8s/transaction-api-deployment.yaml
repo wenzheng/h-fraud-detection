@@ -15,9 +15,11 @@ spec:
       labels:
         app: transaction-api
     spec:
+      imagePullSecrets:
+        - name: acr-credentials
       containers:
         - name: transaction-api
-          image: ghcr.io/wenzheng/h-fraud-detection-transaction-api:latest
+          image: registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest
           ports:
             - containerPort: 8080
           envFrom:
