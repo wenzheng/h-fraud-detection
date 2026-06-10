@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
@@ -115,6 +116,84 @@ class MnsConsumerLifecycleTest {
         assertThat(lifecycle.isQueueEmpty(new ClientException("boom", "OtherError"))).isFalse();
     }
 
+    @Test
+    void shouldContinueWhenNoMessagesAreReturned() {
+        TestableMnsConsumerLifecycle lifecycle = new TestableMnsConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingFraudProcessingService()
+        );
+        lifecycle.messagesToPop = List.of();
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+        assertThat(lifecycle.acknowledgedReceiptHandles).isEmpty();
+    }
+
+    @Test
+    void shouldHandleUnexpectedClientExceptionInPollLoop() {
+        TestableMnsConsumerLifecycle lifecycle = new TestableMnsConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingFraudProcessingService()
+        );
+        lifecycle.clientExceptionToThrow = new ClientException("boom", "req-1");
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+    }
+
+    @Test
+    void shouldHandleUnexpectedExceptionInPollLoop() {
+        TestableMnsConsumerLifecycle lifecycle = new TestableMnsConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingFraudProcessingService()
+        );
+        lifecycle.runtimeExceptionToThrow = new IllegalStateException("boom");
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+    }
+
+    @Test
+    void shouldDelegatePopAndAcknowledgeToQueue() {
+        Message message = message("msg-1", "rh-1", "{}");
+        DelegateAwareMnsConsumerLifecycle lifecycle = new DelegateAwareMnsConsumerLifecycle(
+                new ConsumerProperties(1, 2, 5),
+                new RecordingExecutorService(),
+                objectMapper(),
+                new RecordingFraudProcessingService(),
+                List.of(message)
+        );
+
+        assertThat(lifecycle.popMessages()).containsExactly(message);
+        lifecycle.acknowledgeMessage(message);
+
+        assertThat(lifecycle.batchSizeUsed).isEqualTo(2);
+        assertThat(lifecycle.waitSecondsUsed).isEqualTo(5);
+        assertThat(lifecycle.deletedReceiptHandle).isEqualTo("rh-1");
+    }
+
+    @Test
+    void shouldExposePhaseZero() {
+        MnsConsumerLifecycle lifecycle = new MnsConsumerLifecycle(
+                null,
+                new ConsumerProperties(1, 1, 1),
+                new RecordingExecutorService(),
+                objectMapper(),
+                new RecordingFraudProcessingService()
+        );
+
+        assertThat(lifecycle.getPhase()).isZero();
+    }
+
     private ObjectMapper objectMapper() {
         return JsonMapper.builder()
                 .addModule(new JavaTimeModule())
@@ -187,6 +266,8 @@ class MnsConsumerLifecycleTest {
         private List<Message> messagesToPop = List.of();
         private final List<String> acknowledgedReceiptHandles = new ArrayList<>();
         private int popInvocationCount;
+        private ClientException clientExceptionToThrow;
+        private RuntimeException runtimeExceptionToThrow;
 
         private TestableMnsConsumerLifecycle(
                 ConsumerProperties properties,
@@ -200,6 +281,12 @@ class MnsConsumerLifecycleTest {
         List<Message> popMessages() {
             popInvocationCount++;
             setRunning(false);
+            if (clientExceptionToThrow != null) {
+                throw clientExceptionToThrow;
+            }
+            if (runtimeExceptionToThrow != null) {
+                throw runtimeExceptionToThrow;
+            }
             return messagesToPop;
         }
 
@@ -214,6 +301,37 @@ class MnsConsumerLifecycleTest {
             } else {
                 stop();
             }
+        }
+    }
+
+    private static final class DelegateAwareMnsConsumerLifecycle extends MnsConsumerLifecycle {
+
+        private final List<Message> messages;
+        private int batchSizeUsed;
+        private int waitSecondsUsed;
+        private String deletedReceiptHandle;
+
+        private DelegateAwareMnsConsumerLifecycle(
+                ConsumerProperties properties,
+                ExecutorService executorService,
+                ObjectMapper objectMapper,
+                FraudProcessingService fraudProcessingService,
+                List<Message> messages
+        ) {
+            super(null, properties, executorService, objectMapper, fraudProcessingService);
+            this.messages = messages;
+        }
+
+        @Override
+        List<Message> batchPopMessage(int batchSize, int waitSeconds) {
+            batchSizeUsed = batchSize;
+            waitSecondsUsed = waitSeconds;
+            return messages;
+        }
+
+        @Override
+        void deleteMessage(String receiptHandle) {
+            deletedReceiptHandle = receiptHandle;
         }
     }
 

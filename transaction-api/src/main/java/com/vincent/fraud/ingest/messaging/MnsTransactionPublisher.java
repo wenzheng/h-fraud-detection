@@ -42,11 +42,15 @@ public class MnsTransactionPublisher implements TransactionPublisher {
         Message message = new Message();
         message.setMessageBodyAsRawString(serialize(event));
         try {
-            Message result = transactionQueue.putMessage(message);
+            Message result = putMessage(message);
             return new PublishedTransaction(event.transactionId(), result.getMessageId(), receivedAt);
         } catch (ClientException exception) {
             throw new IllegalStateException("Failed to publish transaction to Alibaba Cloud SMQ", exception);
         }
+    }
+
+    Message putMessage(Message message) {
+        return transactionQueue.putMessage(message);
     }
 
     private String serialize(TransactionEvent event) {

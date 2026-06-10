@@ -17,6 +17,7 @@ import com.vincent.fraud.alert.config.ConsumerProperties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
@@ -161,6 +162,71 @@ class MnsAlertConsumerLifecycleTest {
         assertThat(lifecycle.isQueueEmpty(new ClientException("boom", "OtherError"))).isFalse();
     }
 
+    @Test
+    void shouldContinueWhenNoMessagesAreReturned() {
+        TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingAlertRoutingService()
+        );
+        lifecycle.messagesToPop = List.of();
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+        assertThat(lifecycle.acknowledgedReceiptHandles).isEmpty();
+    }
+
+    @Test
+    void shouldHandleUnexpectedClientExceptionInPollLoop() {
+        TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingAlertRoutingService()
+        );
+        lifecycle.clientExceptionToThrow = new ClientException("boom", "req-1");
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+    }
+
+    @Test
+    void shouldHandleUnexpectedExceptionInPollLoop() {
+        TestableMnsAlertConsumerLifecycle lifecycle = new TestableMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 1, 1),
+                objectMapper(),
+                new RecordingAlertRoutingService()
+        );
+        lifecycle.runtimeExceptionToThrow = new IllegalStateException("boom");
+        lifecycle.setRunning(true);
+
+        lifecycle.pollLoop();
+
+        assertThat(lifecycle.popInvocationCount).isEqualTo(1);
+    }
+
+    @Test
+    void shouldDelegatePopAndAcknowledgeToQueue() {
+        Message message = message("msg-1", "rh-1", "{}");
+        DelegateAwareMnsAlertConsumerLifecycle lifecycle = new DelegateAwareMnsAlertConsumerLifecycle(
+                new ConsumerProperties(1, 2, 5),
+                new RecordingExecutorService(),
+                objectMapper(),
+                new RecordingAlertRoutingService(),
+                List.of(message)
+        );
+
+        assertThat(lifecycle.popMessages()).containsExactly(message);
+        lifecycle.acknowledgeMessage(message);
+
+        assertThat(lifecycle.batchSizeUsed).isEqualTo(2);
+        assertThat(lifecycle.waitSecondsUsed).isEqualTo(5);
+        assertThat(lifecycle.deletedReceiptHandle).isEqualTo("rh-1");
+    }
+
     private ObjectMapper objectMapper() {
         return JsonMapper.builder()
                 .addModule(new JavaTimeModule())
@@ -212,6 +278,8 @@ class MnsAlertConsumerLifecycleTest {
         private List<Message> messagesToPop = List.of();
         private final List<String> acknowledgedReceiptHandles = new ArrayList<>();
         private int popInvocationCount;
+        private ClientException clientExceptionToThrow;
+        private RuntimeException runtimeExceptionToThrow;
 
         private TestableMnsAlertConsumerLifecycle(
                 ConsumerProperties properties,
@@ -225,6 +293,12 @@ class MnsAlertConsumerLifecycleTest {
         List<Message> popMessages() {
             popInvocationCount++;
             setRunning(false);
+            if (clientExceptionToThrow != null) {
+                throw clientExceptionToThrow;
+            }
+            if (runtimeExceptionToThrow != null) {
+                throw runtimeExceptionToThrow;
+            }
             return messagesToPop;
         }
 
@@ -239,6 +313,37 @@ class MnsAlertConsumerLifecycleTest {
             } else {
                 stop();
             }
+        }
+    }
+
+    private static final class DelegateAwareMnsAlertConsumerLifecycle extends MnsAlertConsumerLifecycle {
+
+        private final List<Message> messages;
+        private int batchSizeUsed;
+        private int waitSecondsUsed;
+        private String deletedReceiptHandle;
+
+        private DelegateAwareMnsAlertConsumerLifecycle(
+                ConsumerProperties properties,
+                ExecutorService executorService,
+                ObjectMapper objectMapper,
+                AlertRoutingService alertRoutingService,
+                List<Message> messages
+        ) {
+            super(null, properties, executorService, objectMapper, alertRoutingService);
+            this.messages = messages;
+        }
+
+        @Override
+        List<Message> batchPopMessage(int batchSize, int waitSeconds) {
+            batchSizeUsed = batchSize;
+            waitSecondsUsed = waitSeconds;
+            return messages;
+        }
+
+        @Override
+        void deleteMessage(String receiptHandle) {
+            deletedReceiptHandle = receiptHandle;
         }
     }
 

@@ -45,7 +45,7 @@ public class TcpTransactionServerLifecycle implements SmartLifecycle {
         }
 
         try {
-            ServerSocket createdServerSocket = new ServerSocket();
+            ServerSocket createdServerSocket = createServerSocket();
             createdServerSocket.bind(new InetSocketAddress(properties.port()));
             serverSocket = createdServerSocket;
             log.info("Started TCP transaction listener on port={}", properties.port());
@@ -101,5 +101,13 @@ public class TcpTransactionServerLifecycle implements SmartLifecycle {
     @Override
     public boolean isRunning() {
         return running.get();
+    }
+
+    ServerSocket createServerSocket() throws IOException {
+        return new ServerSocket();
+    }
+
+    int localPort() {
+        return serverSocket == null ? -1 : serverSocket.getLocalPort();
     }
 }

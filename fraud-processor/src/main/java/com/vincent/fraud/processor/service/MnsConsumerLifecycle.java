@@ -85,14 +85,19 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
     }
 
     List<Message> popMessages() {
-        return transactionQueue.batchPopMessage(
-                properties.batchSize(),
-                properties.waitSeconds()
-        );
+        return batchPopMessage(properties.batchSize(), properties.waitSeconds());
     }
 
     void acknowledgeMessage(Message message) {
-        transactionQueue.deleteMessage(message.getReceiptHandle());
+        deleteMessage(message.getReceiptHandle());
+    }
+
+    List<Message> batchPopMessage(int batchSize, int waitSeconds) {
+        return transactionQueue.batchPopMessage(batchSize, waitSeconds);
+    }
+
+    void deleteMessage(String receiptHandle) {
+        transactionQueue.deleteMessage(receiptHandle);
     }
 
     boolean isQueueEmpty(ClientException exception) {
