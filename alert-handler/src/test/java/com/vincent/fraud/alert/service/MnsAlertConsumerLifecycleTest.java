@@ -126,7 +126,14 @@ class MnsAlertConsumerLifecycleTest {
                 new RecordingAlertRoutingService()
         );
 
-        assertThat(lifecycle.isQueueEmpty(new ClientException("Message not exist", "MessageNotExist"))).isTrue();
+        assertThat(lifecycle.isQueueEmpty(new ClientException(
+                "MessageNotExist",
+                "Message not exist",
+                "req-1",
+                null
+        ))).isTrue();
+        assertThat(lifecycle.isQueueEmpty(new ClientException("MessageNotExist appeared in parser output", "req-2")))
+                .isTrue();
         assertThat(lifecycle.isQueueEmpty(new ClientException("boom", "OtherError"))).isFalse();
     }
 

@@ -96,7 +96,8 @@ public class MnsConsumerLifecycle implements SmartLifecycle {
     }
 
     boolean isQueueEmpty(ClientException exception) {
-        return MESSAGE_NOT_EXIST.equals(exception.getErrorCode());
+        return MESSAGE_NOT_EXIST.equals(exception.getErrorCode())
+                || (exception.getMessage() != null && exception.getMessage().contains(MESSAGE_NOT_EXIST));
     }
 
     @Override
