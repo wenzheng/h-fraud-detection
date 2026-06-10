@@ -1,24 +1,13 @@
 <configuration>
-    <springProperty scope="context" name="jsonEnabled" source="logging.json.enabled" defaultValue="true"/>
+    <springProperty scope="context" name="rootLevel" source="logging.level.root" defaultValue="INFO"/>
 
-    <if condition='"true".equalsIgnoreCase(property("jsonEnabled"))'>
-        <then>
-            <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
-                <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
-            </appender>
-            <root level="INFO">
-                <appender-ref ref="STDOUT_JSON"/>
-            </root>
-        </then>
-        <else>
-            <appender name="STDOUT_PLAIN" class="ch.qos.logback.core.ConsoleAppender">
-                <encoder>
-                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
-                </encoder>
-            </appender>
-            <root level="INFO">
-                <appender-ref ref="STDOUT_PLAIN"/>
-            </root>
-        </else>
-    </if>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${rootLevel}">
+        <appender-ref ref="STDOUT"/>
+    </root>
 </configuration>
