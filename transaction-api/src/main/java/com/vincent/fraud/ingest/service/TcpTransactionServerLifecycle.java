@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,6 +82,12 @@ public class TcpTransactionServerLifecycle implements SmartLifecycle {
                 return;
             }
             writer.println(requestHandler.handle(payload));
+        } catch (SocketException exception) {
+            if (isClientDisconnect(exception)) {
+                log.debug("TCP client disconnected before request handling completed: {}", exception.getMessage());
+                return;
+            }
+            log.error("Failed to handle TCP transaction request", exception);
         } catch (Exception exception) {
             log.error("Failed to handle TCP transaction request", exception);
         }
@@ -109,5 +116,16 @@ public class TcpTransactionServerLifecycle implements SmartLifecycle {
 
     int localPort() {
         return serverSocket == null ? -1 : serverSocket.getLocalPort();
+    }
+
+    boolean isClientDisconnect(SocketException exception) {
+        String message = exception.getMessage();
+        if (message == null) {
+            return false;
+        }
+        String normalizedMessage = message.toLowerCase();
+        return normalizedMessage.contains("connection reset")
+                || normalizedMessage.contains("broken pipe")
+                || normalizedMessage.contains("socket closed");
     }
 }

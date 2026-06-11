@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,28 @@ class TcpTransactionServerLifecycleTest {
         lifecycle.handleClient(socket);
 
         assertThat(socket.responseBody()).contains("\"error\":\"EMPTY_PAYLOAD\"");
+    }
+
+    @Test
+    void shouldTreatConnectionResetAsClientDisconnect() throws Exception {
+        TestableTcpTransactionServerLifecycle lifecycle = new TestableTcpTransactionServerLifecycle(
+                new TcpIngressProperties(8000, 1),
+                new StoredExecutorService(),
+                new StubTcpTransactionRequestHandler(),
+                new FakeServerSocket(18000)
+        );
+
+        lifecycle.handleClient(new Socket() {
+            @Override
+            public InputStream getInputStream() throws IOException {
+                throw new SocketException("Connection reset");
+            }
+        });
+
+        assertThat(lifecycle.isClientDisconnect(new SocketException("Connection reset"))).isTrue();
+        assertThat(lifecycle.isClientDisconnect(new SocketException("Broken pipe"))).isTrue();
+        assertThat(lifecycle.isClientDisconnect(new SocketException("Socket closed"))).isTrue();
+        assertThat(lifecycle.isClientDisconnect(new SocketException("Other error"))).isFalse();
     }
 
     @Test
