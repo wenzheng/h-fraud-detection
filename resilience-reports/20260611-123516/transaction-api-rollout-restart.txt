@@ -1,0 +1,2 @@
+$ kubectl -n fraud-platform rollout restart deployment/transaction-api
+deployment.apps/transaction-api restarted

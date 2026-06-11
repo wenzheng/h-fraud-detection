@@ -1,0 +1,2 @@
+$ kubectl -n fraud-platform rollout restart deployment/alert-handler
+deployment.apps/alert-handler restarted

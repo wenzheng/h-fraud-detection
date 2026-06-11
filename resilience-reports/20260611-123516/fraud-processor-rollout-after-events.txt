@@ -1,0 +1,156 @@
+$ kubectl -n fraud-platform get events --sort-by=.metadata.creationTimestamp
+LAST SEEN   TYPE      REASON                         OBJECT                                    MESSAGE
+53s         Normal    EnsuredLoadBalancer            service/transaction-api                   Ensured load balancer [lb-bp18asprexs9aymab9do9]
+29s         Warning   FailedGetResourceMetric        horizontalpodautoscaler/transaction-api   failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+29s         Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/transaction-api   invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+13m         Normal    ScalingReplicaSet              deployment/transaction-api                Scaled up replica set transaction-api-6fdb975c76 from 0 to 1
+13m         Normal    ScalingReplicaSet              deployment/fraud-processor                Scaled up replica set fraud-processor-7c5997f8b7 from 0 to 1
+12m         Normal    ScalingReplicaSet              deployment/alert-handler                  Scaled up replica set alert-handler-65f7949bb7 from 0 to 1
+12m         Normal    ScalingReplicaSet              deployment/transaction-api                Scaled down replica set transaction-api-6fdb975c76 from 1 to 0
+12m         Normal    ScalingReplicaSet              deployment/fraud-processor                Scaled down replica set fraud-processor-7c5997f8b7 from 1 to 0
+12m         Normal    ScalingReplicaSet              deployment/alert-handler                  Scaled down replica set alert-handler-65f7949bb7 from 1 to 0
+59m         Normal    Scheduled                      pod/transaction-api-6fdb975c76-6dqn8      Successfully assigned fraud-platform/transaction-api-6fdb975c76-6dqn8 to cn-hangzhou.10.94.68.56
+59m         Warning   Failed                         pod/transaction-api-6fdb975c76-6dqn8      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+59m         Normal    AllocIPSucceed                 pod/transaction-api-6fdb975c76-6dqn8      Alloc IP 10.94.68.96/16 took 49.88396ms
+59m         Warning   Failed                         pod/transaction-api-6fdb975c76-6dqn8      Error: ErrImagePull
+59m         Normal    Pulling                        pod/transaction-api-6fdb975c76-6dqn8      Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest"
+59m         Normal    SuccessfulCreate               replicaset/transaction-api-6fdb975c76     Created pod: transaction-api-6fdb975c76-6dqn8
+59m         Warning   Failed                         pod/transaction-api-6fdb975c76-6dqn8      Error: ImagePullBackOff
+59m         Normal    BackOff                        pod/transaction-api-6fdb975c76-6dqn8      Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest"
+59m         Normal    Scheduled                      pod/fraud-processor-7c5997f8b7-mb7sm      Successfully assigned fraud-platform/fraud-processor-7c5997f8b7-mb7sm to cn-hangzhou.10.94.68.56
+59m         Normal    SuccessfulCreate               replicaset/fraud-processor-7c5997f8b7     Created pod: fraud-processor-7c5997f8b7-mb7sm
+59m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-mb7sm      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+59m         Normal    AllocIPSucceed                 pod/fraud-processor-7c5997f8b7-mb7sm      Alloc IP 10.94.68.70/16 took 39.922163ms
+59m         Normal    Pulling                        pod/fraud-processor-7c5997f8b7-mb7sm      Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest"
+59m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-mb7sm      Error: ErrImagePull
+59m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-mb7sm      Error: ImagePullBackOff
+59m         Normal    BackOff                        pod/fraud-processor-7c5997f8b7-mb7sm      Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest"
+59m         Normal    AllocIPSucceed                 pod/alert-handler-65f7949bb7-z7zmv        Alloc IP 10.94.68.66/16 took 42.24623ms
+59m         Normal    SuccessfulCreate               replicaset/alert-handler-65f7949bb7       Created pod: alert-handler-65f7949bb7-z7zmv
+59m         Warning   Failed                         pod/alert-handler-65f7949bb7-z7zmv        Error: ImagePullBackOff
+59m         Normal    BackOff                        pod/alert-handler-65f7949bb7-z7zmv        Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest"
+59m         Warning   Failed                         pod/alert-handler-65f7949bb7-z7zmv        Error: ErrImagePull
+59m         Warning   Failed                         pod/alert-handler-65f7949bb7-z7zmv        Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+59m         Normal    Scheduled                      pod/alert-handler-65f7949bb7-z7zmv        Successfully assigned fraud-platform/alert-handler-65f7949bb7-z7zmv to cn-hangzhou.10.94.68.55
+59m         Normal    Pulling                        pod/alert-handler-65f7949bb7-z7zmv        Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest"
+59m         Normal    SuccessfulDelete               replicaset/transaction-api-6fdb975c76     Deleted pod: transaction-api-6fdb975c76-6dqn8
+59m         Normal    SuccessfulDelete               replicaset/fraud-processor-7c5997f8b7     Deleted pod: fraud-processor-7c5997f8b7-mb7sm
+58m         Normal    SuccessfulDelete               replicaset/alert-handler-65f7949bb7       Deleted pod: alert-handler-65f7949bb7-z7zmv
+56m         Normal    Scheduled                      pod/transaction-api-5f9845bdfb-bmfzw      Successfully assigned fraud-platform/transaction-api-5f9845bdfb-bmfzw to cn-hangzhou.10.94.68.55
+56m         Normal    AllocIPSucceed                 pod/transaction-api-5f9845bdfb-bmfzw      Alloc IP 10.94.68.79/16 took 49.739135ms
+56m         Normal    Pulling                        pod/transaction-api-5f9845bdfb-bmfzw      Pulling image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest"
+56m         Normal    Killing                        pod/transaction-api-5f9845bdfb-cjv64      Stopping container transaction-api
+56m         Normal    SuccessfulCreate               replicaset/transaction-api-5f9845bdfb     Created pod: transaction-api-5f9845bdfb-bmfzw
+56m         Normal    Killing                        pod/transaction-api-5f9845bdfb-g26z4      Stopping container transaction-api
+56m         Normal    SuccessfulCreate               replicaset/transaction-api-5f9845bdfb     Created pod: transaction-api-5f9845bdfb-g9465
+56m         Normal    Scheduled                      pod/transaction-api-5f9845bdfb-g9465      Successfully assigned fraud-platform/transaction-api-5f9845bdfb-g9465 to cn-hangzhou.10.94.68.56
+56m         Normal    AllocIPSucceed                 pod/transaction-api-5f9845bdfb-g9465      Alloc IP 10.94.68.70/16 took 36.765895ms
+56m         Normal    Pulling                        pod/transaction-api-5f9845bdfb-g9465      Pulling image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest"
+56m         Normal    UnAvailableLoadBalancer        service/transaction-api                   There are no available nodes for LoadBalancer
+56m         Normal    Created                        pod/transaction-api-5f9845bdfb-g9465      Container created
+56m         Normal    Pulled                         pod/transaction-api-5f9845bdfb-g9465      Successfully pulled image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest" in 6.588s (6.588s including waiting). Image size: 138270876 bytes.
+56m         Normal    Started                        pod/transaction-api-5f9845bdfb-g9465      Container started
+56m         Normal    Started                        pod/transaction-api-5f9845bdfb-bmfzw      Container started
+56m         Normal    Pulled                         pod/transaction-api-5f9845bdfb-bmfzw      Successfully pulled image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest" in 6.551s (6.551s including waiting). Image size: 138270876 bytes.
+56m         Normal    Created                        pod/transaction-api-5f9845bdfb-bmfzw      Container created
+56m         Warning   FailedGetResourceMetric        horizontalpodautoscaler/transaction-api   failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+56m         Warning   FailedComputeMetricsReplicas   horizontalpodautoscaler/transaction-api   invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: unable to get metrics for resource cpu: no metrics returned from resource metrics API
+17m         Normal    SuccessfulCreate               replicaset/transaction-api-6fdb975c76     Created pod: transaction-api-6fdb975c76-5fz7v
+17m         Normal    Pulling                        pod/transaction-api-6fdb975c76-5fz7v      Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest"
+17m         Normal    AllocIPSucceed                 pod/transaction-api-6fdb975c76-5fz7v      Alloc IP 10.94.68.96/16 took 45.347674ms
+17m         Normal    Scheduled                      pod/transaction-api-6fdb975c76-5fz7v      Successfully assigned fraud-platform/transaction-api-6fdb975c76-5fz7v to cn-hangzhou.10.94.68.56
+17m         Warning   Failed                         pod/transaction-api-6fdb975c76-5fz7v      Error: ErrImagePull
+17m         Warning   Failed                         pod/transaction-api-6fdb975c76-5fz7v      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+17m         Normal    BackOff                        pod/transaction-api-6fdb975c76-5fz7v      Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest"
+17m         Warning   Failed                         pod/transaction-api-6fdb975c76-5fz7v      Error: ImagePullBackOff
+17m         Normal    SuccessfulCreate               replicaset/fraud-processor-7c5997f8b7     Created pod: fraud-processor-7c5997f8b7-p8jbn
+17m         Normal    Scheduled                      pod/fraud-processor-7c5997f8b7-p8jbn      Successfully assigned fraud-platform/fraud-processor-7c5997f8b7-p8jbn to cn-hangzhou.10.94.68.56
+17m         Normal    AllocIPSucceed                 pod/fraud-processor-7c5997f8b7-p8jbn      Alloc IP 10.94.68.100/16 took 41.408715ms
+17m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-p8jbn      Error: ErrImagePull
+17m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-p8jbn      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+17m         Normal    BackOff                        pod/fraud-processor-7c5997f8b7-p8jbn      Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest"
+17m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-p8jbn      Error: ImagePullBackOff
+17m         Normal    Pulling                        pod/fraud-processor-7c5997f8b7-p8jbn      Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest"
+17m         Normal    AllocIPSucceed                 pod/alert-handler-65f7949bb7-cxw8f        Alloc IP 10.94.68.80/16 took 40.588118ms
+17m         Normal    Pulling                        pod/alert-handler-65f7949bb7-cxw8f        Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest"
+17m         Normal    SuccessfulCreate               replicaset/alert-handler-65f7949bb7       Created pod: alert-handler-65f7949bb7-cxw8f
+17m         Normal    Scheduled                      pod/alert-handler-65f7949bb7-cxw8f        Successfully assigned fraud-platform/alert-handler-65f7949bb7-cxw8f to cn-hangzhou.10.94.68.55
+17m         Warning   Failed                         pod/alert-handler-65f7949bb7-cxw8f        Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+17m         Warning   Failed                         pod/alert-handler-65f7949bb7-cxw8f        Error: ImagePullBackOff
+17m         Normal    BackOff                        pod/alert-handler-65f7949bb7-cxw8f        Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest"
+17m         Warning   Failed                         pod/alert-handler-65f7949bb7-cxw8f        Error: ErrImagePull
+17m         Normal    SuccessfulDelete               replicaset/transaction-api-6fdb975c76     Deleted pod: transaction-api-6fdb975c76-5fz7v
+17m         Normal    SuccessfulDelete               replicaset/fraud-processor-7c5997f8b7     Deleted pod: fraud-processor-7c5997f8b7-p8jbn
+17m         Normal    SuccessfulDelete               replicaset/alert-handler-65f7949bb7       Deleted pod: alert-handler-65f7949bb7-cxw8f
+13m         Normal    SuccessfulCreate               replicaset/transaction-api-6fdb975c76     Created pod: transaction-api-6fdb975c76-6h7lp
+13m         Normal    Scheduled                      pod/transaction-api-6fdb975c76-6h7lp      Successfully assigned fraud-platform/transaction-api-6fdb975c76-6h7lp to cn-hangzhou.10.94.68.56
+13m         Warning   Failed                         pod/transaction-api-6fdb975c76-6h7lp      Error: ImagePullBackOff
+13m         Normal    AllocIPSucceed                 pod/transaction-api-6fdb975c76-6h7lp      Alloc IP 10.94.68.100/16 took 42.069061ms
+13m         Warning   Failed                         pod/transaction-api-6fdb975c76-6h7lp      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Warning   Failed                         pod/transaction-api-6fdb975c76-6h7lp      Error: ErrImagePull
+13m         Normal    BackOff                        pod/transaction-api-6fdb975c76-6h7lp      Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest"
+12m         Normal    Pulling                        pod/transaction-api-6fdb975c76-6h7lp      Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest"
+13m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-twmb7      Error: ImagePullBackOff
+13m         Normal    BackOff                        pod/fraud-processor-7c5997f8b7-twmb7      Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest"
+13m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-twmb7      Error: ErrImagePull
+13m         Warning   Failed                         pod/fraud-processor-7c5997f8b7-twmb7      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+13m         Normal    Pulling                        pod/fraud-processor-7c5997f8b7-twmb7      Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/fraud-processor:latest"
+13m         Normal    Scheduled                      pod/fraud-processor-7c5997f8b7-twmb7      Successfully assigned fraud-platform/fraud-processor-7c5997f8b7-twmb7 to cn-hangzhou.10.94.68.56
+13m         Normal    SuccessfulCreate               replicaset/fraud-processor-7c5997f8b7     Created pod: fraud-processor-7c5997f8b7-twmb7
+13m         Normal    AllocIPSucceed                 pod/fraud-processor-7c5997f8b7-twmb7      Alloc IP 10.94.68.96/16 took 43.223934ms
+12m         Warning   Failed                         pod/alert-handler-65f7949bb7-mhmjt        Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": failed to pull and unpack image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": failed to resolve reference "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Normal    Scheduled                      pod/alert-handler-65f7949bb7-mhmjt        Successfully assigned fraud-platform/alert-handler-65f7949bb7-mhmjt to cn-hangzhou.10.94.68.55
+12m         Normal    SuccessfulCreate               replicaset/alert-handler-65f7949bb7       Created pod: alert-handler-65f7949bb7-mhmjt
+12m         Normal    Pulling                        pod/alert-handler-65f7949bb7-mhmjt        Pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest"
+12m         Warning   Failed                         pod/alert-handler-65f7949bb7-mhmjt        Error: ErrImagePull
+12m         Normal    AllocIPSucceed                 pod/alert-handler-65f7949bb7-mhmjt        Alloc IP 10.94.68.80/16 took 39.822055ms
+12m         Normal    BackOff                        pod/alert-handler-65f7949bb7-mhmjt        Back-off pulling image "registry.cn-hangzhou.aliyuncs.com/your-namespace/alert-handler:latest"
+12m         Warning   Failed                         pod/alert-handler-65f7949bb7-mhmjt        Error: ImagePullBackOff
+12m         Normal    SuccessfulDelete               replicaset/transaction-api-6fdb975c76     Deleted pod: transaction-api-6fdb975c76-6h7lp
+12m         Warning   Failed                         pod/transaction-api-6fdb975c76-6h7lp      Failed to pull image "registry.cn-hangzhou.aliyuncs.com/your-namespace/transaction-api:latest": rpc error: code = Canceled desc = context canceled
+12m         Normal    SuccessfulDelete               replicaset/fraud-processor-7c5997f8b7     Deleted pod: fraud-processor-7c5997f8b7-twmb7
+12m         Normal    SuccessfulDelete               replicaset/alert-handler-65f7949bb7       Deleted pod: alert-handler-65f7949bb7-mhmjt
+99s         Normal    SuccessfulCreate               replicaset/transaction-api-856c5b997b     Created pod: transaction-api-856c5b997b-b44c8
+99s         Normal    ScalingReplicaSet              deployment/transaction-api                Scaled up replica set transaction-api-856c5b997b from 0 to 1
+99s         Normal    Pulling                        pod/transaction-api-856c5b997b-b44c8      Pulling image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest"
+99s         Normal    Scheduled                      pod/transaction-api-856c5b997b-b44c8      Successfully assigned fraud-platform/transaction-api-856c5b997b-b44c8 to cn-hangzhou.10.94.68.56
+99s         Normal    AllocIPSucceed                 pod/transaction-api-856c5b997b-b44c8      Alloc IP 10.94.68.75/16 took 40.710611ms
+92s         Normal    Pulled                         pod/transaction-api-856c5b997b-b44c8      Successfully pulled image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest" in 6.537s (6.537s including waiting). Image size: 138270852 bytes.
+92s         Normal    Started                        pod/transaction-api-856c5b997b-b44c8      Container started
+92s         Normal    Created                        pod/transaction-api-856c5b997b-b44c8      Container created
+78s         Normal    ScalingReplicaSet              deployment/transaction-api                Scaled down replica set transaction-api-5f9845bdfb from 2 to 1
+78s         Normal    Pulling                        pod/transaction-api-856c5b997b-44gcm      Pulling image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest"
+78s         Normal    Killing                        pod/transaction-api-5f9845bdfb-g9465      Stopping container transaction-api
+78s         Normal    ScalingReplicaSet              deployment/transaction-api                Scaled up replica set transaction-api-856c5b997b from 1 to 2
+78s         Normal    AllocIPSucceed                 pod/transaction-api-856c5b997b-44gcm      Alloc IP 10.94.68.80/16 took 39.933139ms
+78s         Normal    Scheduled                      pod/transaction-api-856c5b997b-44gcm      Successfully assigned fraud-platform/transaction-api-856c5b997b-44gcm to cn-hangzhou.10.94.68.55
+78s         Normal    SuccessfulCreate               replicaset/transaction-api-856c5b997b     Created pod: transaction-api-856c5b997b-44gcm
+78s         Normal    SuccessfulDelete               replicaset/transaction-api-5f9845bdfb     Deleted pod: transaction-api-5f9845bdfb-g9465
+71s         Normal    Pulled                         pod/transaction-api-856c5b997b-44gcm      Successfully pulled image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/transaction-api:latest" in 6.567s (6.567s including waiting). Image size: 138270852 bytes.
+71s         Normal    Created                        pod/transaction-api-856c5b997b-44gcm      Container created
+71s         Normal    Started                        pod/transaction-api-856c5b997b-44gcm      Container started
+58s         Normal    SuccessfulDelete               replicaset/transaction-api-5f9845bdfb     Deleted pod: transaction-api-5f9845bdfb-bmfzw
+58s         Normal    ScalingReplicaSet              deployment/transaction-api                Scaled down replica set transaction-api-5f9845bdfb from 1 to 0
+58s         Normal    Killing                        pod/transaction-api-5f9845bdfb-bmfzw      Stopping container transaction-api
+42s         Normal    AllocIPSucceed                 pod/fraud-processor-65b4bcf8cb-v6pf4      Alloc IP 10.94.68.96/16 took 44.346511ms
+42s         Normal    Pulling                        pod/fraud-processor-65b4bcf8cb-v6pf4      Pulling image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/fraud-processor:latest"
+42s         Normal    SuccessfulCreate               replicaset/fraud-processor-65b4bcf8cb     Created pod: fraud-processor-65b4bcf8cb-v6pf4
+42s         Normal    Scheduled                      pod/fraud-processor-65b4bcf8cb-v6pf4      Successfully assigned fraud-platform/fraud-processor-65b4bcf8cb-v6pf4 to cn-hangzhou.10.94.68.56
+42s         Normal    ScalingReplicaSet              deployment/fraud-processor                Scaled up replica set fraud-processor-65b4bcf8cb from 0 to 1
+35s         Normal    Pulled                         pod/fraud-processor-65b4bcf8cb-v6pf4      Successfully pulled image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/fraud-processor:latest" in 6.233s (6.233s including waiting). Image size: 136957629 bytes.
+35s         Normal    Created                        pod/fraud-processor-65b4bcf8cb-v6pf4      Container created
+35s         Normal    Started                        pod/fraud-processor-65b4bcf8cb-v6pf4      Container started
+21s         Normal    Killing                        pod/fraud-processor-d8584fcdc-42qf7       Stopping container fraud-processor
+21s         Normal    AllocIPSucceed                 pod/fraud-processor-65b4bcf8cb-zkz5r      Alloc IP 10.94.68.79/16 took 48.035514ms
+21s         Normal    Pulling                        pod/fraud-processor-65b4bcf8cb-zkz5r      Pulling image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/fraud-processor:latest"
+21s         Normal    ScalingReplicaSet              deployment/fraud-processor                Scaled down replica set fraud-processor-d8584fcdc from 2 to 1
+21s         Normal    ScalingReplicaSet              deployment/fraud-processor                Scaled up replica set fraud-processor-65b4bcf8cb from 1 to 2
+21s         Normal    SuccessfulDelete               replicaset/fraud-processor-d8584fcdc      Deleted pod: fraud-processor-d8584fcdc-42qf7
+21s         Normal    SuccessfulCreate               replicaset/fraud-processor-65b4bcf8cb     Created pod: fraud-processor-65b4bcf8cb-zkz5r
+21s         Normal    Scheduled                      pod/fraud-processor-65b4bcf8cb-zkz5r      Successfully assigned fraud-platform/fraud-processor-65b4bcf8cb-zkz5r to cn-hangzhou.10.94.68.55
+15s         Normal    Started                        pod/fraud-processor-65b4bcf8cb-zkz5r      Container started
+15s         Normal    Created                        pod/fraud-processor-65b4bcf8cb-zkz5r      Container created
+15s         Normal    Pulled                         pod/fraud-processor-65b4bcf8cb-zkz5r      Successfully pulled image "crpi-tpeh1o86awlrouhr.cn-hangzhou.personal.cr.aliyuncs.com/fraud-detection-reg/fraud-processor:latest" in 6.184s (6.184s including waiting). Image size: 136957629 bytes.
+1s          Normal    SuccessfulDelete               replicaset/fraud-processor-d8584fcdc      Deleted pod: fraud-processor-d8584fcdc-xxmzm
+1s          Normal    ScalingReplicaSet              deployment/fraud-processor                Scaled down replica set fraud-processor-d8584fcdc from 1 to 0
+1s          Normal    Killing                        pod/fraud-processor-d8584fcdc-xxmzm       Stopping container fraud-processor

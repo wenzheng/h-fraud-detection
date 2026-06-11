@@ -1,0 +1,9 @@
+$ kubectl -n fraud-platform get pods -o wide
+NAME                               READY   STATUS    RESTARTS   AGE     IP             NODE                      NOMINATED NODE   READINESS GATES
+alert-handler-55d7dd6975-gxgx7     0/1     Error     0          91m     10.94.68.58    cn-hangzhou.10.94.68.56   <none>           <none>
+alert-handler-66d97775c9-dfh66     1/1     Running   0          21s     10.94.68.66    cn-hangzhou.10.94.68.55   <none>           <none>
+alert-handler-66d97775c9-dpjrr     1/1     Running   0          41s     10.94.68.100   cn-hangzhou.10.94.68.56   <none>           <none>
+fraud-processor-65b4bcf8cb-v6pf4   1/1     Running   0          97s     10.94.68.96    cn-hangzhou.10.94.68.56   <none>           <none>
+fraud-processor-65b4bcf8cb-zkz5r   1/1     Running   0          76s     10.94.68.79    cn-hangzhou.10.94.68.55   <none>           <none>
+transaction-api-856c5b997b-44gcm   1/1     Running   0          2m13s   10.94.68.80    cn-hangzhou.10.94.68.55   <none>           <none>
+transaction-api-856c5b997b-b44c8   1/1     Running   0          2m34s   10.94.68.75    cn-hangzhou.10.94.68.56   <none>           <none>

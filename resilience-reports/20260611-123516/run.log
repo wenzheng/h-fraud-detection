@@ -1,0 +1,6 @@
+[2026-06-11 12:35:16] Running scenario: transaction-api-rollout
+[2026-06-11 12:36:13] Running scenario: fraud-processor-rollout
+[2026-06-11 12:37:10] Running scenario: alert-handler-rollout
+[2026-06-11 12:38:05] Running scenario: fraud-processor-scale
+[2026-06-11 12:38:22] Running scenario: transaction-api-pod-delete
+[2026-06-11 12:38:36] Resilience test artifacts written to resilience-reports/20260611-123516

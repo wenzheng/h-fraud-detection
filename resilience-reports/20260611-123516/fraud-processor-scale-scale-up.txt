@@ -1,0 +1,2 @@
+$ kubectl -n fraud-platform scale deployment/fraud-processor --replicas=2
+deployment.apps/fraud-processor scaled

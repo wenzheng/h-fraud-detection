@@ -1,0 +1,2 @@
+$ kubectl -n fraud-platform rollout restart deployment/fraud-processor
+deployment.apps/fraud-processor restarted

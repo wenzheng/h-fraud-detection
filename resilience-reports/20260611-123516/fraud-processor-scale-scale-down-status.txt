@@ -1,0 +1,2 @@
+$ kubectl -n fraud-platform rollout status deployment/fraud-processor --timeout=5m
+deployment "fraud-processor" successfully rolled out

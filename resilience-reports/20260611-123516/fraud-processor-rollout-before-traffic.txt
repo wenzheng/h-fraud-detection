@@ -1,0 +1,15 @@
+$ BASE_URL=47.99.194.202 ./scripts/send-transactions.sh testtransactions.csv
+line=2 status=202 latencyMs=650.985
+{"transactionId":"f045f092-2ea8-430a-a9fe-fe96f5d8632a","queueMessageId":"16AD60F7165D0003167D3633F63C3751","status":"QUEUED"}
+
+line=3 status=202 latencyMs=80.243
+{"transactionId":"f45621fc-3336-4055-a48d-50ef5a780646","queueMessageId":"16AD60F7165D0003167D3633F6D938B4","status":"QUEUED"}
+
+line=4 status=202 latencyMs=728.050
+{"transactionId":"e048e2c5-d073-40b1-ac1d-b384bd72e482","queueMessageId":"16AD60F7165D7FA30F063633F9D54528","status":"QUEUED"}
+
+line=5 status=202 latencyMs=78.059
+{"transactionId":"8653a0d0-6122-4bcc-b7e0-d36c79b51349","queueMessageId":"16AD60F7165D0003167D3633FA7740D3","status":"QUEUED"}
+
+Latency summary
+requests=4 avgMs=384.334 minMs=78.059 maxMs=728.050

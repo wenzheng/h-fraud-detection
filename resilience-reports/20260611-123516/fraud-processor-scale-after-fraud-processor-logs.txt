@@ -1,0 +1,57 @@
+$ kubectl -n fraud-platform logs -l app=fraud-processor --tail=100
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-06-11T04:38:12.050Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Starting FraudProcessorApplication v0.0.1-SNAPSHOT using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-06-11T04:38:12.052Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - No active profile set, falling back to 1 default profile: "default"
+2026-06-11T04:38:14.518Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-06-11T04:38:14.528Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-06-11T04:38:14.530Z INFO  [main] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-06-11T04:38:14.531Z INFO  [main] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-06-11T04:38:14.735Z INFO  [main] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-06-11T04:38:14.737Z INFO  [main] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2598 ms
+2026-06-11T04:38:15.448Z INFO  [main] com.vincent.fraud.processor.config.FraudProcessorConfig - Creating MNS client for fraud-processor with endpoint=https://1589951295264175.mns.cn-hangzhou-internal.aliyuncs.com
+2026-06-11T04:38:16.739Z INFO  [main] org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2026-06-11T04:38:16.845Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-06-11T04:38:16.913Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-06-11T04:38:16.939Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Started FraudProcessorApplication in 5.989 seconds (process running for 6.94)
+2026-06-11T04:38:19.573Z INFO  [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-11T04:38:19.574Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-06-11T04:38:19.575Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-06-11T04:36:35.142Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Starting FraudProcessorApplication v0.0.1-SNAPSHOT using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-06-11T04:36:35.144Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - No active profile set, falling back to 1 default profile: "default"
+2026-06-11T04:36:37.752Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-06-11T04:36:37.759Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-06-11T04:36:37.812Z INFO  [main] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-06-11T04:36:37.813Z INFO  [main] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-06-11T04:36:37.948Z INFO  [main] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-06-11T04:36:37.949Z INFO  [main] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2710 ms
+2026-06-11T04:36:38.641Z INFO  [main] com.vincent.fraud.processor.config.FraudProcessorConfig - Creating MNS client for fraud-processor with endpoint=https://1589951295264175.mns.cn-hangzhou-internal.aliyuncs.com
+2026-06-11T04:36:39.815Z INFO  [main] org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2026-06-11T04:36:39.850Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-06-11T04:36:39.920Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-06-11T04:36:39.940Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Started FraudProcessorApplication in 5.808 seconds (process running for 6.732)
+2026-06-11T04:36:46.866Z INFO  [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-11T04:36:46.866Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-06-11T04:36:46.912Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 46 ms
+2026-06-11T04:37:11.842Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=cb107912-6970-42a0-9430-994b90b55708 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T04:37:11.842Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=16c0f6af-0d20-4a5a-b07d-6184bd7e41f9 transactionId=cb107912-6970-42a0-9430-994b90b55708 queueMessageId=085313F1165D00020F6D3634D4151B07
+2026-06-11T04:38:08.173Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=4fc26c9d-28ac-4996-a464-36f7273f9e74 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T04:38:08.173Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=f8f8faae-9608-484a-9bfd-50f0aab97fcd transactionId=4fc26c9d-28ac-4996-a464-36f7273f9e74 queueMessageId=085313F1165D00020F6D3635B025F118
+2026-06-11T04:38:08.204Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=a1cbb6b9-ed3d-45a4-b37b-0de6dd65df50 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T04:38:08.204Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=f19840dc-34d6-4e65-a521-c244a0ea0af5 transactionId=a1cbb6b9-ed3d-45a4-b37b-0de6dd65df50 queueMessageId=085313F1165D00020F6D3635B043F151

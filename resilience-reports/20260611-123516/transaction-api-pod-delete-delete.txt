@@ -1,0 +1,2 @@
+$ kubectl -n fraud-platform delete pod transaction-api-856c5b997b-44gcm
+pod "transaction-api-856c5b997b-44gcm" deleted

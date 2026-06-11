@@ -1,0 +1,121 @@
+$ kubectl -n fraud-platform logs -l app=fraud-processor --tail=100
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-06-11T03:06:12.577Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Starting FraudProcessorApplication v0.0.1-SNAPSHOT using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-06-11T03:06:12.579Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - No active profile set, falling back to 1 default profile: "default"
+2026-06-11T03:06:14.971Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-06-11T03:06:15.033Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-06-11T03:06:15.036Z INFO  [main] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-06-11T03:06:15.036Z INFO  [main] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-06-11T03:06:15.248Z INFO  [main] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-06-11T03:06:15.249Z INFO  [main] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2582 ms
+2026-06-11T03:06:16.146Z INFO  [main] com.vincent.fraud.processor.config.FraudProcessorConfig - Creating MNS client for fraud-processor with endpoint=https://1589951295264175.mns.cn-hangzhou-internal.aliyuncs.com
+2026-06-11T03:06:17.341Z INFO  [main] org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2026-06-11T03:06:17.446Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-06-11T03:06:17.456Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-06-11T03:06:17.546Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Started FraudProcessorApplication in 6.08 seconds (process running for 7.001)
+2026-06-11T03:06:24.244Z INFO  [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-11T03:06:24.244Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-06-11T03:06:24.246Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-06-11T03:09:00.821Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=f78b5017-a0f5-4252-b5b6-e0de4ad1da02 accountId=acct-normal-001
+2026-06-11T03:09:01.762Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=14a2a4ec-4663-4b03-a590-959b4b8bf4fa accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:09:01.763Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=afe660a2-2137-4fe7-9caf-6862f9d95b6b transactionId=14a2a4ec-4663-4b03-a590-959b4b8bf4fa queueMessageId=085313F1165D0003167D35E41BB2A73F
+2026-06-11T03:09:01.803Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=b84fca3a-ee58-442c-b5c1-da5cb1f866b0 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:09:01.803Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=23448a83-f7b0-463d-8ffe-a909a15a7b24 transactionId=b84fca3a-ee58-442c-b5c1-da5cb1f866b0 queueMessageId=085313F1165D0003167D35E41BD8A778
+2026-06-11T03:09:01.895Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=d12d09b4-738e-486e-80a8-b32fa5195b7d accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:09:01.895Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=b534cfe6-27e8-40d4-a138-b4feea24d4fc transactionId=d12d09b4-738e-486e-80a8-b32fa5195b7d queueMessageId=085313F1165D0003167D35E41C43A801
+2026-06-11T03:29:23.409Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=580cebaa-bdeb-4b8d-a8d3-35450ab5da6e accountId=acct-normal-001
+2026-06-11T03:29:23.569Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=09fe81e9-d699-401d-aefd-b0c9de94ae2d accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:29:23.569Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=1769f49f-c951-439d-b68c-f5a1833ab703 transactionId=09fe81e9-d699-401d-aefd-b0c9de94ae2d queueMessageId=085313F1165D00010F7235F6C0642282
+2026-06-11T03:29:23.689Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=f9f5f9a0-94b4-43f2-ae74-db498bde6f3d accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:29:23.689Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=c0784d7a-f64f-4d16-82b2-9312e58c98a2 transactionId=f9f5f9a0-94b4-43f2-ae74-db498bde6f3d queueMessageId=085313F1165D0003167D35F6C0E582D7
+2026-06-11T03:30:42.420Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=5c5c5d02-f630-4810-ba89-b63b4f8af3e5 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:30:42.420Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=fc2dfd57-e794-42d1-b4e1-a213dc4ded4f transactionId=5c5c5d02-f630-4810-ba89-b63b4f8af3e5 queueMessageId=085313F1165D0003167D35F7F46DA5ED
+2026-06-11T03:38:53.284Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=45736115-28fb-4ab4-8d8d-610004fd852f accountId=acct-normal-001
+2026-06-11T03:38:53.674Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=6cad313f-61f2-47e2-8fd6-fc3f88a4af45 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:38:53.674Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=b6c794c0-1b4e-4d6c-8ab3-63e6a3123a16 transactionId=6cad313f-61f2-47e2-8fd6-fc3f88a4af45 queueMessageId=085313F1165D0003167D35FF7364DF75
+2026-06-11T03:38:53.889Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=46205bb4-809a-45ea-98b9-1c45e77f9652 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:38:53.890Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=0de9466e-97b5-4773-a861-b2c87249640f transactionId=46205bb4-809a-45ea-98b9-1c45e77f9652 queueMessageId=085313F1165D00010F7235FF743C003A
+2026-06-11T03:41:27.174Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=552bea16-4adb-4ed5-b847-24de97bd9c86 accountId=acct-normal-001
+2026-06-11T03:41:27.320Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=0e2f0547-2e35-4fd5-a34f-ae4d15fb68b1 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:41:27.321Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=651443a0-f3e1-4897-baeb-9f0d0cb4ebf8 transactionId=0e2f0547-2e35-4fd5-a34f-ae4d15fb68b1 queueMessageId=085313F1165D00010F723601CB920ECB
+2026-06-11T03:41:27.783Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=bc58c120-8932-42b8-9b6d-f7b2ae702ae3 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:41:27.783Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=31a90a7b-8d67-4d46-8fd5-d5f7144807d5 transactionId=bc58c120-8932-42b8-9b6d-f7b2ae702ae3 queueMessageId=085313F1165D0003167D3601CD613720
+2026-06-11T03:41:27.806Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=4aacf192-96f9-46e4-8873-d4c93ae4b514 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:41:27.806Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=d812349b-529a-4721-ae6e-b8c92478461b transactionId=4aacf192-96f9-46e4-8873-d4c93ae4b514 queueMessageId=085313F1165D0003167D3601CD793764
+2026-06-11T03:41:37.879Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=c581c3d4-84ab-4167-b8cf-8e7078c26cd1 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:41:37.879Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=6cceabfa-e391-418e-ba24-2f3e2c18d6b2 transactionId=c581c3d4-84ab-4167-b8cf-8e7078c26cd1 queueMessageId=085313F1165D0003167D3601F4D08C21
+2026-06-11T03:43:24.504Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=e98ed57e-fdd9-4a96-b62f-02026b1f6722 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:43:24.504Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=6eedbbef-77d0-4662-8b12-3225e421d698 transactionId=e98ed57e-fdd9-4a96-b62f-02026b1f6722 queueMessageId=085313F1165D00010F72360395519581
+2026-06-11T03:43:24.672Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=60f98228-9c2c-4577-be08-ef9cc6c7cf96 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:43:24.672Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=0a9a811c-a67d-4f22-bf5b-e31e373bc386 transactionId=60f98228-9c2c-4577-be08-ef9cc6c7cf96 queueMessageId=085313F1165D00010F72360395FC9731
+2026-06-11T04:08:14.022Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=bccf42f6-5f31-4d55-bf90-2dace16b975d accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T04:08:14.022Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=0a8fbc84-9160-4db2-8224-a1f94e1dd78d transactionId=bccf42f6-5f31-4d55-bf90-2dace16b975d queueMessageId=085313F1165D00010F72361A4FB76DB0
+2026-06-11T04:35:18.839Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=67148dc1-e534-46a6-a425-df8a72c28a1d accountId=acct-normal-001
+2026-06-11T04:35:18.948Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=bda8bff7-911d-466b-b825-2169f9284644 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T04:35:18.948Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=a297ba61-de27-42e8-bcc8-6beb263720b6 transactionId=bda8bff7-911d-466b-b825-2169f9284644 queueMessageId=085313F1165D0003167D36331B178196
+2026-06-11T04:35:19.073Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=8b8d01eb-116e-4d6e-a398-99b663e40a55 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T04:35:19.073Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=a659f379-a628-43d1-a23c-eda3e91e005e transactionId=8b8d01eb-116e-4d6e-a398-99b663e40a55 queueMessageId=085313F1165D0003167D36331B9D82BD
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-06-11T03:06:34.659Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Starting FraudProcessorApplication v0.0.1-SNAPSHOT using Java 17.0.19 with PID 1 (/app/app.jar started by root in /app)
+2026-06-11T03:06:34.662Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - No active profile set, falling back to 1 default profile: "default"
+2026-06-11T03:06:37.622Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-06-11T03:06:37.629Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-06-11T03:06:37.630Z INFO  [main] org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2026-06-11T03:06:37.630Z INFO  [main] org.apache.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-06-11T03:06:37.847Z INFO  [main] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-06-11T03:06:37.849Z INFO  [main] org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3017 ms
+2026-06-11T03:06:38.640Z INFO  [main] com.vincent.fraud.processor.config.FraudProcessorConfig - Creating MNS client for fraud-processor with endpoint=https://1589951295264175.mns.cn-hangzhou-internal.aliyuncs.com
+2026-06-11T03:06:39.827Z INFO  [main] org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+2026-06-11T03:06:39.932Z INFO  [main] org.apache.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-06-11T03:06:39.940Z INFO  [main] org.springframework.boot.web.embedded.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-06-11T03:06:40.025Z INFO  [main] com.vincent.fraud.processor.FraudProcessorApplication - Started FraudProcessorApplication in 6.709 seconds (process running for 7.881)
+2026-06-11T03:06:44.924Z INFO  [http-nio-8080-exec-1] org.apache.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-11T03:06:44.925Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-06-11T03:06:44.926Z INFO  [http-nio-8080-exec-1] org.springframework.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-06-11T03:28:56.997Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=72c07791-fc55-4b6f-b035-30a10c083919 accountId=acct-normal-001
+2026-06-11T03:28:57.212Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=4b9ded89-41ff-4800-a612-19203e182e37 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:28:57.212Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=e412b229-5dca-474c-864f-102f80d66605 transactionId=4b9ded89-41ff-4800-a612-19203e182e37 queueMessageId=085313F1165D0003167E35F659467817
+2026-06-11T03:28:57.572Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=3c99f2f0-36d1-4f3f-b183-57c003fb7a08 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:28:57.572Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=894051b0-fc74-4d81-a4da-49d5b22f2209 transactionId=3c99f2f0-36d1-4f3f-b183-57c003fb7a08 queueMessageId=085313F1165D0003167E35F65ADE7B76
+2026-06-11T03:28:57.596Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=bb71fed5-305a-4601-b832-fdeab9cf6668 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:28:57.596Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=31501744-6ba1-4364-a48a-9bdb70872b43 transactionId=bb71fed5-305a-4601-b832-fdeab9cf6668 queueMessageId=085313F1165D0003167E35F65AF87BA9
+2026-06-11T03:29:23.822Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=c550eaf9-5c5e-4061-83a1-6e5557d4cf3e accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:29:23.823Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=10db214c-f94e-4993-9aa1-de2a38138842 transactionId=c550eaf9-5c5e-4061-83a1-6e5557d4cf3e queueMessageId=085313F1165D0003167E35F6C16A49E3
+2026-06-11T03:30:41.789Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=665cb9a6-6614-4d39-8727-cbcbcbdb6030 accountId=acct-normal-001
+2026-06-11T03:30:41.942Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=7754763c-b4aa-4a82-89df-0bb12159a578 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:30:41.942Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=1c605f23-d81f-4586-988b-f0f9065c1517 transactionId=7754763c-b4aa-4a82-89df-0bb12159a578 queueMessageId=085313F1165D0003167E35F7F28FCBD1
+2026-06-11T03:30:42.133Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=33406302-2fcc-4f44-a0af-bd04171257b5 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:30:42.133Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=095a593f-39a4-4a9b-8278-49ed5a182920 transactionId=33406302-2fcc-4f44-a0af-bd04171257b5 queueMessageId=085313F1165D0003167E35F7F34FCD64
+2026-06-11T03:38:53.562Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=6c196f39-c371-46f7-99ca-ff55369c6914 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:38:53.562Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=f7a690e6-9bbd-4b9e-9396-4bf1beda2f53 transactionId=6c196f39-c371-46f7-99ca-ff55369c6914 queueMessageId=085313F1165D7F967F9C35FF72F04647
+2026-06-11T03:41:37.332Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=d6c800aa-2196-4e67-8065-d8fb7060e0c9 accountId=acct-normal-001
+2026-06-11T03:41:38.101Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=3cb86f4f-fa48-4e1e-9ddb-109c391d3c1f accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T03:41:38.101Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=baa567a4-0def-4297-a798-f0ba595556df transactionId=3cb86f4f-fa48-4e1e-9ddb-109c391d3c1f queueMessageId=085313F1165D7F967F9C3601F5B0342E
+2026-06-11T03:41:38.246Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=d87c9cb5-2e37-43bb-bf8c-206901cfffe9 accountId=acct-normal-004 severity=HIGH reasons=[Amount exceeded threshold]
+2026-06-11T03:41:38.247Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=7f5b76b3-542b-4c69-9669-03bfec393dd1 transactionId=d87c9cb5-2e37-43bb-bf8c-206901cfffe9 queueMessageId=085313F1165D7F967F9C3601F6413558
+2026-06-11T03:43:24.091Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=8dfe2fb0-40c4-4464-99c6-46e45ef7d41c accountId=acct-normal-001
+2026-06-11T03:43:24.247Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=2fc0541d-4189-410a-92da-9874956f79d9 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T03:43:24.247Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=a8f08234-f713-4e8e-9643-dc36656ac148 transactionId=2fc0541d-4189-410a-92da-9874956f79d9 queueMessageId=085313F1165D0003167E3603944CF7FD
+2026-06-11T04:08:13.380Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.FraudProcessingService - transaction-approved transactionId=bdb46b08-d885-4e66-b670-6e34df72308a accountId=acct-normal-001
+2026-06-11T04:08:13.688Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=e806e9bb-59f0-4c69-8ef7-50c6f3379843 accountId=acct-normal-003 severity=MEDIUM reasons=[Merchant is on the suspicious watchlist]
+2026-06-11T04:08:13.688Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=3459fd15-6b4e-4fd7-8383-de6c982df034 transactionId=e806e9bb-59f0-4c69-8ef7-50c6f3379843 queueMessageId=085313F1165D0003167E361A4E6F66CF
+2026-06-11T04:08:13.710Z WARN  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=b78549be-4a88-400e-8e55-b8479db0e1ca accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T04:08:13.711Z INFO  [pool-3-thread-1] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=39d72952-04a1-4a92-9aad-41bc8b01f8ee transactionId=b78549be-4a88-400e-8e55-b8479db0e1ca queueMessageId=085313F1165D0003167E361A4E8B6708
+2026-06-11T04:35:18.789Z WARN  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert transactionId=8ca55fe4-4bab-4181-9b17-6ab7d28525b0 accountId=acct-blacklist-001 severity=HIGH reasons=[Account is on the suspicious watchlist]
+2026-06-11T04:35:18.789Z INFO  [pool-3-thread-2] com.vincent.fraud.processor.service.AlertService - fraud-alert-enqueued alertId=b53a1480-e7d5-4f8d-9581-0d38ff0e248f transactionId=8ca55fe4-4bab-4181-9b17-6ab7d28525b0 queueMessageId=085313F1165D7F967F9C36331A7D89A7
