@@ -24,50 +24,97 @@ Supported ingress options:
 
 ```mermaid
 flowchart LR
-    Client["Client / Upstream System"] --> HTTP["HTTP API :8080"]
-    Client --> TCP["TCP Ingress :8000"]
-    HTTP --> API["transaction-api"]
-    TCP --> API
-    API --> TQ["MNS Transaction Queue"]
-    TQ --> FP["fraud-processor"]
-    FP --> Rules["Rule-Based Fraud Detection"]
-    Rules --> AQ["MNS Alert Queue"]
-    AQ --> AH["alert-handler"]
-    AH --> Log["Log / SLS"]
-    AH --> Tg["Telegram Sender"]
-    AH --> Mail["Email Sender"]
-    API --> Metrics["Prometheus Metrics"]
-    FP --> Metrics
-    AH --> Metrics
+    subgraph External["Physical Component: External Clients"]
+        Client["Client / Upstream System"]
+    end
+
+    subgraph Ack["Physical Component: ACK Kubernetes Cluster"]
+        subgraph Ingest["Deployment: transaction-api"]
+            HTTP["HTTP Interface :8080"]
+            TCP["TCP Interface :8000"]
+            Publish["Logical Service: validation + publish to queue"]
+            HTTP --> Publish
+            TCP --> Publish
+        end
+
+        subgraph Processor["Deployment: fraud-processor"]
+            Consume["Logical Service: queue consumer"]
+            Detect["Logical Service: rule-based fraud detection"]
+            Emit["Logical Service: publish alert event"]
+            Consume --> Detect --> Emit
+        end
+
+        subgraph Alert["Deployment: alert-handler"]
+            AlertConsume["Logical Service: alert consumer"]
+            Route["Logical Service: severity routing"]
+            Notify["Logical Service: log / email / Telegram actions"]
+            AlertConsume --> Route --> Notify
+        end
+    end
+
+    subgraph Messaging["Physical Component: Alibaba Cloud MNS / SMQ"]
+        TQ["Transaction Queue"]
+        AQ["Alert Queue"]
+    end
+
+    subgraph Observe["Physical Component: Observability"]
+        SLS["Alibaba Cloud SLS"]
+        Prom["Prometheus / ACK Managed Prometheus"]
+    end
+
+    Client --> HTTP
+    Client --> TCP
+    Publish --> TQ
+    TQ --> Consume
+    Emit --> AQ
+    AQ --> AlertConsume
+    Notify --> SLS
+    Publish --> Prom
+    Detect --> Prom
+    Route --> Prom
 ```
 
-### Node Description
+### Physical Components
+
+- `External Clients`
+  - upstream systems can submit transactions through either HTTP or TCP
+
+- `ACK Kubernetes Cluster`
+  - hosts the three stateless application deployments
+  - allows each deployment to scale independently through replicas and HPA
+
+- `Alibaba Cloud MNS / SMQ`
+  - provides asynchronous decoupling between ingestion, fraud processing, and alert handling
+  - consists of a transaction queue and an alert queue
+
+- `Observability Stack`
+  - Alibaba Cloud SLS receives centralized application logs
+  - Prometheus or ACK Managed Prometheus scrapes application metrics
+
+### Logical Services Inside Each Component
 
 - `transaction-api`
-  - entry point for external callers
-  - validates payloads
-  - supports both HTTP and TCP ingress
+  - exposes the HTTP interface on port `8080`
+  - exposes the TCP interface on port `8000`
+  - validates inbound transaction payloads
   - publishes normalized transaction events to the transaction queue
-  - remains stateless, so it can scale behind a Kubernetes `Service`
 
 - `fraud-processor`
-  - consumes messages from the transaction queue
-  - evaluates fraud rules such as amount threshold and suspicious account / merchant lists
-  - publishes alert events to a separate alert queue
-  - scales through competing queue consumers
+  - consumes transaction messages from the queue
+  - applies rule-based fraud detection
+  - emits alert events to the alert queue when suspicious activity is found
 
 - `alert-handler`
   - consumes alert events from the alert queue
   - routes by severity
-  - current behavior:
+  - triggers the downstream notification actions
+  - current routing behavior:
     - `HIGH`: Telegram + log
     - `MEDIUM`: Email + log
     - `LOW`: log only
-  - scales independently from ingestion and fraud detection
 
 - `shared`
-  - provides shared message models used by all applications
-  - keeps event contracts consistent across the services
+  - provides common DTOs and event contracts across the three applications
 
 ### Why the Design Scales
 
