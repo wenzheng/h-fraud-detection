@@ -16,9 +16,15 @@ public class AlertRoutingService {
 
     private final AlertRoutingProperties properties;
     private final Map<AlertRoutingProperties.Channel, AlertChannelSender> senders;
+    private final AlertMetricsService alertMetricsService;
 
-    public AlertRoutingService(AlertRoutingProperties properties, List<AlertChannelSender> senderList) {
+    public AlertRoutingService(
+            AlertRoutingProperties properties,
+            List<AlertChannelSender> senderList,
+            AlertMetricsService alertMetricsService
+    ) {
         this.properties = properties;
+        this.alertMetricsService = alertMetricsService;
         this.senders = new EnumMap<>(AlertRoutingProperties.Channel.class);
         senderList.forEach(sender -> senders.put(sender.channel(), sender));
     }
@@ -39,6 +45,7 @@ public class AlertRoutingService {
             }
             sender.send(alertEvent);
         }
+        alertMetricsService.incrementHandledCount();
     }
 
     private List<AlertRoutingProperties.Channel> actionsFor(AlertEvent.Severity severity) {

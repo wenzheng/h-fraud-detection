@@ -24,7 +24,7 @@ class TcpTransactionRequestHandlerTest {
     @Test
     void shouldPublishValidTcpPayload() {
         AtomicReference<PublishTransactionCommand> captured = new AtomicReference<>();
-        TransactionPublisherService publisherService = new TransactionPublisherService(command -> {
+        TransactionPublisherService publisherService = transactionPublisherService(command -> {
             captured.set(command);
             return new PublishedTransaction("tx-1", "msg-1", Instant.parse("2026-06-11T01:00:01Z"));
         });
@@ -56,7 +56,7 @@ class TcpTransactionRequestHandlerTest {
         TcpTransactionRequestHandler handler = new TcpTransactionRequestHandler(
                 objectMapper,
                 validator,
-                new TransactionPublisherService(command -> {
+                transactionPublisherService(command -> {
                     throw new IllegalStateException("should not be called");
                 })
         );
@@ -74,7 +74,7 @@ class TcpTransactionRequestHandlerTest {
         TcpTransactionRequestHandler handler = new TcpTransactionRequestHandler(
                 objectMapper,
                 validator,
-                new TransactionPublisherService(command -> {
+                transactionPublisherService(command -> {
                     throw new IllegalStateException("should not be called");
                 })
         );
@@ -89,7 +89,7 @@ class TcpTransactionRequestHandlerTest {
         TcpTransactionRequestHandler handler = new TcpTransactionRequestHandler(
                 objectMapper,
                 validator,
-                new TransactionPublisherService(command -> {
+                transactionPublisherService(command -> {
                     throw new IllegalStateException("publish failed");
                 })
         );
@@ -127,12 +127,24 @@ class TcpTransactionRequestHandlerTest {
         TcpTransactionRequestHandler handler = new TcpTransactionRequestHandler(
                 failingObjectMapper,
                 validator,
-                new TransactionPublisherService(command ->
+                transactionPublisherService(command ->
                         new PublishedTransaction("tx-1", "msg-1", Instant.parse("2026-06-11T01:00:01Z")))
         );
 
         assertThatThrownBy(() -> handler.handle("{\"ignored\":true}"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Failed to serialize TCP response");
+    }
+
+    private TransactionPublisherService transactionPublisherService(TransactionPublisher transactionPublisher) {
+        return new TransactionPublisherService(
+                transactionPublisher,
+                new IngressMetricsService(
+                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                        "transaction-api",
+                        "pod-1",
+                        "node-1"
+                )
+        );
     }
 }

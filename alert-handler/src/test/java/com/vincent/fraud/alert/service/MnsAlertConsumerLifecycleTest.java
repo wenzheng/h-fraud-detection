@@ -34,7 +34,13 @@ class MnsAlertConsumerLifecycleTest {
                 new ObjectMapper(),
                 new AlertRoutingService(
                         new AlertRoutingProperties(null, null, null),
-                        List.of(new TelegramAlertSender(), new EmailAlertSender())
+                        List.of(new TelegramAlertSender(), new EmailAlertSender()),
+                        new AlertMetricsService(
+                                new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                                "alert-handler",
+                                "pod-1",
+                                "node-1"
+                        )
                 )
         );
 
@@ -54,7 +60,13 @@ class MnsAlertConsumerLifecycleTest {
                 new ObjectMapper(),
                 new AlertRoutingService(
                         new AlertRoutingProperties(null, null, null),
-                        List.of(new TelegramAlertSender(), new EmailAlertSender())
+                        List.of(new TelegramAlertSender(), new EmailAlertSender()),
+                        new AlertMetricsService(
+                                new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                                "alert-handler",
+                                "pod-1",
+                                "node-1"
+                        )
                 )
         );
         lifecycle.start();
@@ -302,7 +314,16 @@ class MnsAlertConsumerLifecycleTest {
         private final List<AlertEvent> routedAlerts = new ArrayList<>();
 
         private RecordingAlertRoutingService() {
-            super(new AlertRoutingProperties(null, null, null), List.of(new TelegramAlertSender(), new EmailAlertSender()));
+            super(
+                    new AlertRoutingProperties(null, null, null),
+                    List.of(new TelegramAlertSender(), new EmailAlertSender()),
+                    new AlertMetricsService(
+                            new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                            "alert-handler",
+                            "pod-1",
+                            "node-1"
+                    )
+            );
         }
 
         @Override

@@ -14,10 +14,16 @@ public class FraudProcessingService {
 
     private final FraudDetectionService fraudDetectionService;
     private final AlertService alertService;
+    private final ProcessingMetricsService processingMetricsService;
 
-    public FraudProcessingService(FraudDetectionService fraudDetectionService, AlertService alertService) {
+    public FraudProcessingService(
+            FraudDetectionService fraudDetectionService,
+            AlertService alertService,
+            ProcessingMetricsService processingMetricsService
+    ) {
         this.fraudDetectionService = fraudDetectionService;
         this.alertService = alertService;
+        this.processingMetricsService = processingMetricsService;
     }
 
     public void process(TransactionEvent transactionEvent) {
@@ -28,5 +34,6 @@ public class FraudProcessingService {
             log.info("transaction-approved transactionId={} accountId={}",
                     transactionEvent.transactionId(), transactionEvent.accountId());
         }
+        processingMetricsService.incrementProcessedCount();
     }
 }

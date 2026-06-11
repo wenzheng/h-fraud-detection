@@ -2,6 +2,7 @@ package com.vincent.fraud.ingest.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.vincent.fraud.ingest.service.IngressMetricsService;
 import com.vincent.fraud.ingest.service.PublishedTransaction;
 import com.vincent.fraud.ingest.service.TransactionPublisherService;
 import java.math.BigDecimal;
@@ -13,7 +14,13 @@ class TransactionControllerTest {
     @Test
     void shouldReturnQueuedResponse() {
         TransactionPublisherService publisherService = new TransactionPublisherService(
-                command -> new PublishedTransaction("tx-1", "msg-1", Instant.parse("2026-06-10T01:02:04Z"))
+                command -> new PublishedTransaction("tx-1", "msg-1", Instant.parse("2026-06-10T01:02:04Z")),
+                new IngressMetricsService(
+                        new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                        "transaction-api",
+                        "pod-1",
+                        "node-1"
+                )
         );
         TransactionController controller = new TransactionController(publisherService);
         TransactionRequest request = new TransactionRequest(

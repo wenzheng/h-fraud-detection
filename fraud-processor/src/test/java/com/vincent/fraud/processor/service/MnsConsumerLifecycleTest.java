@@ -30,7 +30,11 @@ class MnsConsumerLifecycleTest {
                 new ConsumerProperties(3, 1, 1),
                 executorService,
                 objectMapper(),
-                new FraudProcessingService(new StubFraudDetectionService(), new NoOpAlertService())
+                new FraudProcessingService(
+                        new StubFraudDetectionService(),
+                        new NoOpAlertService(),
+                        metricsService()
+                )
         );
 
         lifecycle.start();
@@ -223,12 +227,21 @@ class MnsConsumerLifecycleTest {
         );
     }
 
+    private static ProcessingMetricsService metricsService() {
+        return new ProcessingMetricsService(
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                "fraud-processor",
+                "pod-1",
+                "node-1"
+        );
+    }
+
     private static final class RecordingFraudProcessingService extends FraudProcessingService {
 
         private final List<TransactionEvent> processedTransactions = new ArrayList<>();
 
         private RecordingFraudProcessingService() {
-            super(new StubFraudDetectionService(), new NoOpAlertService());
+            super(new StubFraudDetectionService(), new NoOpAlertService(), metricsService());
         }
 
         @Override

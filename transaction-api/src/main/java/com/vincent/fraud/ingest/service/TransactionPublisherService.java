@@ -6,12 +6,19 @@ import org.springframework.stereotype.Service;
 public class TransactionPublisherService {
 
     private final TransactionPublisher transactionPublisher;
+    private final IngressMetricsService ingressMetricsService;
 
-    public TransactionPublisherService(TransactionPublisher transactionPublisher) {
+    public TransactionPublisherService(
+            TransactionPublisher transactionPublisher,
+            IngressMetricsService ingressMetricsService
+    ) {
         this.transactionPublisher = transactionPublisher;
+        this.ingressMetricsService = ingressMetricsService;
     }
 
     public PublishedTransaction publish(PublishTransactionCommand command) {
-        return transactionPublisher.publish(command);
+        PublishedTransaction publishedTransaction = transactionPublisher.publish(command);
+        ingressMetricsService.incrementPublishedCount();
+        return publishedTransaction;
     }
 }

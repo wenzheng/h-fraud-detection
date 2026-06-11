@@ -30,6 +30,11 @@ spec:
                 name: transaction-api-config
             - secretRef:
                 name: mns-credentials
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness

@@ -16,54 +16,63 @@ class AlertRoutingServiceTest {
     void shouldRouteHighSeverityToTelegramAndLog() {
         List<AlertEvent> telegramAlerts = new ArrayList<>();
         List<AlertEvent> emailAlerts = new ArrayList<>();
+        RecordingAlertMetricsService metricsService = new RecordingAlertMetricsService();
         AlertRoutingService service = new AlertRoutingService(
                 properties(),
                 List.of(
                         sender(AlertRoutingProperties.Channel.TELEGRAM, telegramAlerts),
                         sender(AlertRoutingProperties.Channel.EMAIL, emailAlerts)
-                )
+                ),
+                metricsService
         );
 
         service.route(alert(AlertEvent.Severity.HIGH));
 
         assertThat(telegramAlerts).hasSize(1);
         assertThat(emailAlerts).isEmpty();
+        assertThat(metricsService.incrementCount).isEqualTo(1);
     }
 
     @Test
     void shouldRouteMediumSeverityToEmailAndLog() {
         List<AlertEvent> telegramAlerts = new ArrayList<>();
         List<AlertEvent> emailAlerts = new ArrayList<>();
+        RecordingAlertMetricsService metricsService = new RecordingAlertMetricsService();
         AlertRoutingService service = new AlertRoutingService(
                 properties(),
                 List.of(
                         sender(AlertRoutingProperties.Channel.TELEGRAM, telegramAlerts),
                         sender(AlertRoutingProperties.Channel.EMAIL, emailAlerts)
-                )
+                ),
+                metricsService
         );
 
         service.route(alert(AlertEvent.Severity.MEDIUM));
 
         assertThat(telegramAlerts).isEmpty();
         assertThat(emailAlerts).hasSize(1);
+        assertThat(metricsService.incrementCount).isEqualTo(1);
     }
 
     @Test
     void shouldOnlyLogLowSeverityAlerts() {
         List<AlertEvent> telegramAlerts = new ArrayList<>();
         List<AlertEvent> emailAlerts = new ArrayList<>();
+        RecordingAlertMetricsService metricsService = new RecordingAlertMetricsService();
         AlertRoutingService service = new AlertRoutingService(
                 properties(),
                 List.of(
                         sender(AlertRoutingProperties.Channel.TELEGRAM, telegramAlerts),
                         sender(AlertRoutingProperties.Channel.EMAIL, emailAlerts)
-                )
+                ),
+                metricsService
         );
 
         service.route(alert(AlertEvent.Severity.LOW));
 
         assertThat(telegramAlerts).isEmpty();
         assertThat(emailAlerts).isEmpty();
+        assertThat(metricsService.incrementCount).isEqualTo(1);
     }
 
     private AlertRoutingProperties properties() {
@@ -104,5 +113,22 @@ class AlertRoutingServiceTest {
                 now,
                 now
         );
+    }
+
+    private static final class RecordingAlertMetricsService extends AlertMetricsService {
+
+        private int incrementCount;
+
+        private RecordingAlertMetricsService() {
+            super(new io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                    "alert-handler",
+                    "pod-1",
+                    "node-1");
+        }
+
+        @Override
+        public void incrementHandledCount() {
+            incrementCount++;
+        }
     }
 }
