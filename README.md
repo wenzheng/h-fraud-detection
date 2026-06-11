@@ -22,56 +22,52 @@ Supported ingress options:
 
 ## Architecture Design
 
-```mermaid
-flowchart LR
-    subgraph External["Physical Component: External Clients"]
-        Client["Client / Upstream System"]
-    end
-
-    subgraph Ack["Physical Component: ACK Kubernetes Cluster"]
-        subgraph Ingest["Deployment: transaction-api"]
-            HTTP["HTTP Interface :8080"]
-            TCP["TCP Interface :8000"]
-            Publish["Logical Service: validation + publish to queue"]
-            HTTP --> Publish
-            TCP --> Publish
-        end
-
-        subgraph Processor["Deployment: fraud-processor"]
-            Consume["Logical Service: queue consumer"]
-            Detect["Logical Service: rule-based fraud detection"]
-            Emit["Logical Service: publish alert event"]
-            Consume --> Detect --> Emit
-        end
-
-        subgraph Alert["Deployment: alert-handler"]
-            AlertConsume["Logical Service: alert consumer"]
-            Route["Logical Service: severity routing"]
-            Notify["Logical Service: log / email / Telegram actions"]
-            AlertConsume --> Route --> Notify
-        end
-    end
-
-    subgraph Messaging["Physical Component: Alibaba Cloud MNS / SMQ"]
-        TQ["Transaction Queue"]
-        AQ["Alert Queue"]
-    end
-
-    subgraph Observe["Physical Component: Observability"]
-        SLS["Alibaba Cloud SLS"]
-        Prom["Prometheus / ACK Managed Prometheus"]
-    end
-
-    Client --> HTTP
-    Client --> TCP
-    Publish --> TQ
-    TQ --> Consume
-    Emit --> AQ
-    AQ --> AlertConsume
-    Notify --> SLS
-    Publish --> Prom
-    Detect --> Prom
-    Route --> Prom
+```text
++---------------------------------------------------------------+
+| Physical Component: External Clients                          |
+|                                                               |
+|  Client / Upstream System                                     |
++-----------------------------+---------------------------------+
+                              |
+                              v
++---------------------------------------------------------------+
+| Physical Component: ACK Kubernetes Cluster                    |
+|                                                               |
+|  +---------------------------------------------------------+  |
+|  | Deployment: transaction-api                            |  |
+|  |                                                         |  |
+|  |  HTTP Interface :8080  ----+                            |  |
+|  |                            |                            |  |
+|  |  TCP Interface  :8000  ----+--> validate + publish     |  |
+|  +---------------------------------------------------------+  |
+|                              |                                |
+|                              v                                |
+|  +---------------------------------------------------------+  |
+|  | Deployment: fraud-processor                            |  |
+|  |                                                         |  |
+|  |  queue consumer --> rule-based detection --> emit alert|  |
+|  +---------------------------------------------------------+  |
+|                              |                                |
+|                              v                                |
+|  +---------------------------------------------------------+  |
+|  | Deployment: alert-handler                              |  |
+|  |                                                         |  |
+|  |  alert consumer --> severity routing --> notify        |  |
+|  |                                       |                |  |
+|  |                                       +--> log         |  |
+|  |                                       +--> email       |  |
+|  |                                       +--> Telegram    |  |
+|  +---------------------------------------------------------+  |
++---------------------------------------------------------------+
+                |                                |
+                v                                v
++-------------------------------+   +----------------------------------------+
+| Physical Component:           |   | Physical Component: Observability      |
+| Alibaba Cloud MNS / SMQ       |   |                                        |
+|                               |   |  Alibaba Cloud SLS                     |
+|  Transaction Queue            |   |  Prometheus / ACK Managed Prometheus   |
+|  Alert Queue                  |   |                                        |
++-------------------------------+   +----------------------------------------+
 ```
 
 ### Physical Components
@@ -109,8 +105,8 @@ flowchart LR
   - routes by severity
   - triggers the downstream notification actions
   - current routing behavior:
-    - `HIGH`: Telegram + log
-    - `MEDIUM`: Email + log
+    - `HIGH`: Telegram (dummy for furture impl) + log
+    - `MEDIUM`: Email (dummy for furture impl) + log
     - `LOW`: log only
 
 - `shared`
