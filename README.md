@@ -1,93 +1,90 @@
-# Fraud Platform on Alibaba Cloud SMQ
+# Fraud Platform on Alibaba Cloud
 
-This repository is split into three independently scalable Spring Boot applications plus one shared module:
+This repository contains a real-time fraud detection platform built as three independently scalable Spring Boot applications on Alibaba Cloud.
 
-- `transaction-api`: receives transactions over HTTP and publishes them to an Alibaba Cloud MNS transaction queue
-- `fraud-processor`: consumes transaction messages, applies fraud rules, and publishes alert events to a separate Alibaba Cloud MNS alert queue
-- `alert-handler`: consumes alert events and routes them by severity using preconfigured actions
-- `shared`: common DTOs used by all applications
+For deployment instructions, see [Installation.md](/Users/vincent/git-workspace/test-app/Installation.md).
 
-## Architecture
+## Overall Introduction
+
+The platform separates ingestion, fraud detection, and alert handling into different applications so that each stage can scale horizontally and evolve independently.
+
+Modules:
+
+- `transaction-api`: accepts transaction requests and publishes them to Alibaba Cloud MNS / SMQ
+- `fraud-processor`: consumes transaction messages, applies fraud rules, and emits alert events
+- `alert-handler`: consumes alert events and routes them to downstream notification actions
+- `shared`: common DTOs and shared message contracts
+
+Supported ingress options:
+
+- HTTP: `POST /api/v1/transactions`
+- TCP: raw line-based transaction submission on port `8000`
+
+## Architecture Design
 
 ```mermaid
 flowchart LR
-    Client["Payment Client"] --> API["transaction-api"]
+    Client["Client / Upstream System"] --> HTTP["HTTP API :8080"]
+    Client --> TCP["TCP Ingress :8000"]
+    HTTP --> API["transaction-api"]
+    TCP --> API
     API --> TQ["MNS Transaction Queue"]
-    TQ --> Processor["fraud-processor"]
-    Processor --> Rules["Rule-Based Detection"]
+    TQ --> FP["fraud-processor"]
+    FP --> Rules["Rule-Based Fraud Detection"]
     Rules --> AQ["MNS Alert Queue"]
-    AQ --> AlertHandler["alert-handler"]
-    AlertHandler --> High["HIGH: Telegram + Log"]
-    AlertHandler --> Medium["MEDIUM: Email + Log"]
-    AlertHandler --> Low["LOW: Log Only"]
+    AQ --> AH["alert-handler"]
+    AH --> Log["Log / SLS"]
+    AH --> Tg["Telegram Sender"]
+    AH --> Mail["Email Sender"]
+    API --> Metrics["Prometheus Metrics"]
+    FP --> Metrics
+    AH --> Metrics
 ```
 
-## Why this scales horizontally
+### Node Description
 
-- `transaction-api` is stateless and can run behind a Kubernetes `Service` with multiple replicas.
-- `fraud-processor` uses competing consumers on the transaction queue, so more replicas increase processing throughput safely.
-- `alert-handler` uses competing consumers on the alert queue, so alert delivery can scale independently of detection.
-- Separate queues decouple ingestion, detection, and notification workloads.
+- `transaction-api`
+  - entry point for external callers
+  - validates payloads
+  - supports both HTTP and TCP ingress
+  - publishes normalized transaction events to the transaction queue
+  - remains stateless, so it can scale behind a Kubernetes `Service`
 
-## Module layout
+- `fraud-processor`
+  - consumes messages from the transaction queue
+  - evaluates fraud rules such as amount threshold and suspicious account / merchant lists
+  - publishes alert events to a separate alert queue
+  - scales through competing queue consumers
+
+- `alert-handler`
+  - consumes alert events from the alert queue
+  - routes by severity
+  - current behavior:
+    - `HIGH`: Telegram + log
+    - `MEDIUM`: Email + log
+    - `LOW`: log only
+  - scales independently from ingestion and fraud detection
+
+- `shared`
+  - provides shared message models used by all applications
+  - keeps event contracts consistent across the services
+
+### Why the Design Scales
+
+- queue decoupling absorbs bursts between stages
+- each application can be scaled horizontally without changing the others
+- ACK HPA can scale each deployment independently
+- alert processing does not block transaction ingestion
+
+## Interfaces
+
+### HTTP Interface
+
+`transaction-api` exposes:
 
 ```text
-shared/
-transaction-api/
-fraud-processor/
-alert-handler/
-k8s/
+POST /api/v1/transactions
 ```
-
-## Build
-
-Build everything:
-
-```bash
-mvn -DskipTests package
-```
-
-Build a single service:
-
-```bash
-mvn -pl transaction-api -am -DskipTests package
-mvn -pl fraud-processor -am -DskipTests package
-mvn -pl alert-handler -am -DskipTests package
-```
-
-The `package` phase builds the jar on the host first, then builds each Docker image from the module Dockerfile. To skip Docker image creation:
-
-```bash
-mvn -Ddocker.skip=true verify
-```
-
-## Local run
-
-```bash
-mvn -pl transaction-api spring-boot:run
-mvn -pl fraud-processor spring-boot:run
-mvn -pl alert-handler spring-boot:run
-```
-
-## Shared configuration
-
-All services share the same MNS endpoint and credentials. Two queues are used:
-
-```bash
-export MNS_ENDPOINT=http://<account-id>.mns.<region>.aliyuncs.com/
-export MNS_TRANSACTION_QUEUE_NAME=fraud-transactions
-export MNS_ALERT_QUEUE_NAME=fraud-alerts
-export MNS_ACCESS_KEY_ID=<your-access-key-id>
-export MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
-```
-
-Shared Kubernetes values are now created by the GitHub Actions deploy job from GitHub Variables.
-
-## Application behavior
-
-### `transaction-api`
-
-Publishes a transaction event with `POST /api/v1/transactions`.
 
 Example:
 
@@ -104,117 +101,150 @@ curl -X POST http://localhost:8080/api/v1/transactions \
   }'
 ```
 
-### `fraud-processor`
+### TCP Interface
 
-Consumes transaction events and evaluates rule-based fraud checks.
+`transaction-api` also exposes TCP ingress on port `8000`.
+
+The payload is a single JSON object per line. This is useful when an upstream system prefers socket-based delivery over HTTP.
+
+Example using the included script:
 
 ```bash
-export CONSUMER_POLLER_CONCURRENCY=2
-export CONSUMER_BATCH_SIZE=8
-export CONSUMER_WAIT_SECONDS=15
-export FRAUD_AMOUNT_THRESHOLD=10000
+./scripts/send-transactions-tcp.sh testtransactions.csv
 ```
 
-If a transaction is suspicious, `fraud-processor` publishes an `AlertEvent` to the alert queue instead of sending notifications directly.
+## Logging and Observability
 
-Current severity behavior:
+Application logs can be centralized into Alibaba Cloud SLS / Log Service.
 
-- `HIGH`: multiple fraud reasons, suspicious account, or amount threshold breach
-- `MEDIUM`: suspicious merchant-only alerts
-- `LOW`: any future generic anomaly reason not matched by the higher rules
+![SLS Logging](images/sls.png)
 
-### `alert-handler`
+All three applications also expose Prometheus metrics through:
 
-Consumes alert events from the alert queue and applies routing rules based on severity.
-
-Default actions in [alert-handler application.yml](/Users/vincent/git-workspace/test-app/alert-handler/src/main/resources/application.yml):
-
-- `HIGH`: `TELEGRAM`, `LOG`
-- `MEDIUM`: `EMAIL`, `LOG`
-- `LOW`: `LOG`
-
-The Telegram and email sender implementations are placeholders for later integration and currently log intent only.
-
-## Docker images
-
-Default image names:
-
-- `fraud/transaction-api:0.0.1-SNAPSHOT`
-- `fraud/fraud-processor:0.0.1-SNAPSHOT`
-- `fraud/alert-handler:0.0.1-SNAPSHOT`
-
-Override the image prefix if needed:
-
-```bash
-mvn -pl alert-handler -am -DskipTests -Ddocker.image.prefix=registry.cn-hangzhou.aliyuncs.com/your-namespace package
+```text
+/actuator/prometheus
 ```
 
-## Test coverage
-
-Generate tests plus JaCoCo reports:
+Examples:
 
 ```bash
-mvn -Ddocker.skip=true verify
+kubectl -n fraud-platform port-forward deploy/transaction-api 8081:8080
+curl http://127.0.0.1:8081/actuator/prometheus | grep fraud_
+
+kubectl -n fraud-platform port-forward deploy/fraud-processor 8082:8080
+curl http://127.0.0.1:8082/actuator/prometheus | grep fraud_
+
+kubectl -n fraud-platform port-forward deploy/alert-handler 8083:8080
+curl http://127.0.0.1:8083/actuator/prometheus | grep fraud_
 ```
 
-Per-module HTML reports are generated under:
+Current custom metrics:
 
-- `transaction-api/target/site/jacoco/index.html`
-- `fraud-processor/target/site/jacoco/index.html`
-- `alert-handler/target/site/jacoco/index.html`
+- `fraud_ingress_transactions_total`
+- `fraud_data_points_processed_total`
+- `fraud_alerts_handled_total`
 
-## GitHub Actions and GHCR
+ACK Prometheus metric view example:
 
-The workflow at [.github/workflows/ci-cd.yml](/Users/vincent/git-workspace/test-app/.github/workflows/ci-cd.yml):
+![Prometheus Metrics](images/metrics.png)
 
-- runs tests and JaCoCo coverage for all three applications
-- uploads HTML coverage and Surefire reports as workflow artifacts
-- builds and pushes Docker images to GHCR
-- deploys to Alibaba Cloud ACK from `main`
+Recommended PromQL queries:
 
-Published images:
+Per pod:
 
-- `ghcr.io/<owner>/<repo>-transaction-api`
-- `ghcr.io/<owner>/<repo>-fraud-processor`
-- `ghcr.io/<owner>/<repo>-alert-handler`
-
-Secrets such as `ACK_KUBECONFIG_B64`, `MNS_ACCESS_KEY_ID`, and `MNS_ACCESS_KEY_SECRET` should stay in GitHub Secrets or ACK Secrets, not in source code.
-
-## Kubernetes on ACK
-
-Apply the manifests:
-
-```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/shared-configmap.yaml
-kubectl apply -f k8s/transaction-api-configmap.yaml
-kubectl apply -f k8s/fraud-processor-configmap.yaml
-kubectl apply -f k8s/alert-handler-configmap.yaml
-kubectl apply -f k8s/transaction-api-deployment.yaml
-kubectl apply -f k8s/transaction-api-service.yaml
-kubectl apply -f k8s/transaction-api-hpa.yaml
-kubectl apply -f k8s/fraud-processor-deployment.yaml
-kubectl apply -f k8s/fraud-processor-hpa.yaml
-kubectl apply -f k8s/alert-handler-deployment.yaml
-kubectl apply -f k8s/alert-handler-hpa.yaml
+```promql
+sum by (pod) (fraud_ingress_transactions_total)
+sum by (pod) (fraud_data_points_processed_total)
+sum by (pod) (fraud_alerts_handled_total)
 ```
 
-Before deploying, update image names in:
+Per node:
 
-- [transaction-api deployment](/Users/vincent/git-workspace/test-app/k8s/transaction-api-deployment.yaml)
-- [fraud-processor deployment](/Users/vincent/git-workspace/test-app/k8s/fraud-processor-deployment.yaml)
-- [alert-handler deployment](/Users/vincent/git-workspace/test-app/k8s/alert-handler-deployment.yaml)
+```promql
+sum by (node) (fraud_ingress_transactions_total)
+sum by (node) (fraud_data_points_processed_total)
+sum by (node) (fraud_alerts_handled_total)
+```
 
-Create the MNS credentials secret:
+Rate by node:
+
+```promql
+sum by (node) (rate(fraud_ingress_transactions_total[5m]))
+sum by (node) (rate(fraud_data_points_processed_total[5m]))
+sum by (node) (rate(fraud_alerts_handled_total[5m]))
+```
+
+## Testing the Public Endpoint
+
+If `transaction-api` is exposed by a `LoadBalancer`, get the public IP:
 
 ```bash
-kubectl -n fraud-platform create secret generic mns-credentials \
-  --from-literal=MNS_ACCESS_KEY_ID=<your-access-key-id> \
-  --from-literal=MNS_ACCESS_KEY_SECRET=<your-access-key-secret>
+kubectl -n fraud-platform get svc transaction-api
+```
 
-If you deploy through GitHub Actions, configure these GitHub Variables instead of applying a shared ConfigMap file manually:
+Then send sample traffic:
 
-- `MNS_ENDPOINT`
-- `MNS_TRANSACTION_QUEUE_NAME`
-- `MNS_ALERT_QUEUE_NAME`
+```bash
+BASE_URL=http://<external-ip>/ ./scripts/send-transactions.sh testtransactions.csv
+```
+
+This is the quickest end-to-end validation that:
+
+- the API is reachable
+- the queue publish path works
+- `fraud-processor` is consuming
+- alerts are generated when suspicious transactions are submitted
+
+## Future Extensions
+
+The current design is intentionally simple, but it leaves room for several useful extensions.
+
+### Replace the Alert Queue with Topic-Based Fan-Out
+
+Today, alerts are pushed to one alert queue and consumed by `alert-handler`. A future improvement is to publish alerts to an Alibaba Cloud MNS / SMQ topic instead of a single queue.
+
+Benefits:
+
+- different consumers can subscribe independently
+- one consumer can handle Telegram
+- another can handle email
+- another can write to audit storage or incident systems
+- notification logic can evolve without coupling all alert actions into one service
+
+This is a better fit when you want parallel processing by alert type or by downstream integration.
+
+### Introduce a Central Cache for Aggregated Rules
+
+The current fraud rules are simple stateless checks. If you later need aggregated rules such as:
+
+- transaction count per account in the last 5 minutes
+- velocity checks per device or IP
+- cumulative amount thresholds across a time window
+
+then introduce a central caching layer such as Redis.
+
+Benefits:
+
+- supports rolling-window and aggregation-based fraud rules
+- shared state across multiple `fraud-processor` replicas
+- low-latency lookups for account, device, and IP activity
+
+### Additional Evolution Options
+
+- add dead-letter queues for poison messages
+- add real Telegram and email integrations
+- add dynamic rule management from database or config service
+- split high-priority and low-priority alerts into different streams
+- add model-based scoring alongside rule-based detection
+
+## Repository Layout
+
+```text
+shared/
+transaction-api/
+fraud-processor/
+alert-handler/
+k8s/
+.github/workflows/
+images/
 ```

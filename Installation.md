@@ -293,69 +293,13 @@ kubectl -n fraud-platform rollout status deployment/fraud-processor --timeout=5m
 kubectl -n fraud-platform rollout status deployment/alert-handler --timeout=5m
 ```
 
-### 2.10 Test the Public Endpoint
-
-If the `transaction-api` service is exposed by `LoadBalancer`, get its public IP:
-
-```bash
-kubectl -n fraud-platform get svc transaction-api
-```
-
-Then test it:
-
-```bash
-BASE_URL=http://<external-ip>/ ./scripts/send-transactions.sh testtransactions.csv
-```
-
-### 2.11 View the Metrics
-
-Each service exposes Prometheus metrics at:
-
-- `http://<host>:8080/actuator/prometheus`
-
-Examples:
-
-```bash
-kubectl -n fraud-platform port-forward deploy/transaction-api 8081:8080
-curl http://127.0.0.1:8081/actuator/prometheus | grep fraud_
-
-kubectl -n fraud-platform port-forward deploy/fraud-processor 8082:8080
-curl http://127.0.0.1:8082/actuator/prometheus | grep fraud_
-
-kubectl -n fraud-platform port-forward deploy/alert-handler 8083:8080
-curl http://127.0.0.1:8083/actuator/prometheus | grep fraud_
-```
-
-Expected custom metrics:
-
-- `fraud_ingress_transactions_total`
-- `fraud_data_points_processed_total`
-- `fraud_alerts_handled_total`
-
-### 2.12 Recommended Prometheus Queries
-
-Per node:
-
-```promql
-sum by (node) (fraud_ingress_transactions_total)
-sum by (node) (fraud_data_points_processed_total)
-sum by (node) (fraud_alerts_handled_total)
-```
-
-Rate by node:
-
-```promql
-sum by (node) (rate(fraud_ingress_transactions_total[5m]))
-sum by (node) (rate(fraud_data_points_processed_total[5m]))
-sum by (node) (rate(fraud_alerts_handled_total[5m]))
-```
-
 ---
 
 ## Notes
 
 - The GitHub workflow deploys on pushes to `main` and `master`.
 - The direct Kubernetes method gives you more manual control, but you must manage secrets, config maps, and image names yourself.
+- Runtime testing, metrics inspection, and observability examples are documented in [README.md](/Users/vincent/git-workspace/test-app/README.md).
 - If ACK cannot pull images, verify the registry credentials and `imagePullSecrets`.
 - If the pods start but do not process messages, verify:
   - `MNS_ENDPOINT`
